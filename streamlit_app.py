@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 # ------------------------------
 st.set_page_config(
     page_title="TEAM 23: 🌎 Environmental Justice in New Mexico — 📊 Environmental Justice Index (EJI) Visualization",
-    page_icon="📊",
+    page_icon="🌎",
     layout="wide"
 )
 st.markdown('<style>div[data-testid="stSidebarNav"] {display: none;}</style>', unsafe_allow_html=True)
