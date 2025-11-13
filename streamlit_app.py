@@ -6,6 +6,12 @@ import plotly.graph_objects as go
 # ------------------------------
 # Page Config
 # ------------------------------
+def main():
+    st.set_page_config(
+        page_title="Environmental Justice Index (EJI) — New Mexico",
+        page_icon="🏡",
+        layout="wide"
+    )
 st.set_page_config(page_title="Environmental Justice Index (EJI) — New Mexico", page_icon="🌎", layout="wide")
 
 # ------------------------------
