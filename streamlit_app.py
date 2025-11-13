@@ -7,7 +7,7 @@ import plotly.graph_objects as go
 # Page Config
 # ------------------------------
 st.set_page_config(
-    page_title="TEAM 23: 🌎 Environmental Justice in New Mexico — 📊 Environmental Justice Index (EJI) Visualization",
+    page_title="TEAM 23: Environmental Justice in New Mexico — 📊 EJI Visualization",
     page_icon="🌎",
     layout="wide"
 )
@@ -206,7 +206,7 @@ def plot_comparison(data1, data2, label1, label2):
         label1: data1.values,
         label2: data2.values
     }).set_index("Metric").T
-    st.subheader("📊 Data Comparison Table")
+    st.subheader("⚖️ Data Comparison Table")
     display_colored_table_html(compare_table.reset_index(), dataset1_rainbows,
                                {"index": "Metric", **pretty}, title=None)
 
@@ -222,7 +222,7 @@ def plot_comparison(data1, data2, label1, label2):
 # ------------------------------
 # Main App Layout
 # ------------------------------
-st.title("🌎 Environmental Justice Index Visualization (New Mexico)")
+st.title("📊 Environmental Justice Index Visualization (New Mexico)")
 st.info("""
 **Interpreting the EJI Score:**  
 Lower EJI values (closer to 0) indicate *lower cumulative environmental and social burdens* — generally a good outcome.  
@@ -238,7 +238,7 @@ if selected_parameter == "County":
     if subset.empty:
         st.warning(f"No data found for {selected_county}.")
     else:
-        st.subheader(f"📊 EJI Data for {selected_county}")
+        st.subheader(f"⚖️ EJI Data for {selected_county}")
         display_colored_table_html(subset, dataset1_rainbows, pretty)
         county_values = subset[metrics].iloc[0]
         plot_single_chart(f"EJI Metrics — {selected_county}", county_values, area_label=selected_county)
@@ -261,7 +261,7 @@ else:
     if nm_row.empty:
         st.warning("No New Mexico data found.")
     else:
-        st.subheader("📊 New Mexico Statewide EJI Scores")
+        st.subheader("⚖️ New Mexico Statewide EJI Scores")
         display_colored_table_html(nm_row, dataset1_rainbows, pretty)
         nm_values = nm_row[metrics].iloc[0]
         plot_single_chart("EJI Metrics — New Mexico", nm_values, area_label="New Mexico")
