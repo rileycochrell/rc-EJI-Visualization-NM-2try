@@ -135,7 +135,7 @@ def build_texts_and_colors(colors, area_label, values):
 # ------------------------------
 # Graph Functions
 # ------------------------------
-def plot_single_chart(title, values, area_name):
+def plot_single_chart(title, values, area_label):
     import plotly.graph_objects as go
     metrics = values.index.tolist()
     scores = values.values.tolist()
