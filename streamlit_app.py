@@ -3,46 +3,35 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 
-# --- PAGE CONFIG ---
-st.set_page_config(
-    page_title="Environmental Justice Index (EJI) — New Mexico",
-    page_icon="🌎",
-    layout="wide"
-)
-st.sidebar.title("🏡 EJI Visualization — Home")
+# ------------------------------
+# Page Config
+# ------------------------------
+def main():
+    st.set_page_config(
+        page_title="Environmental Justice Index (EJI) — New Mexico",
+        page_icon="🏡",
+        layout="wide"
+    )
 
-st.title("🌎 Environmental Justice Index Visualization (New Mexico)")
-st.info("""
-**Interpreting the EJI Score:**
-Lower EJI values (closer to 0) indicate **lower cumulative environmental and social burdens** — generally a *good* outcome.
-Higher EJI values (closer to 1) indicate **higher cumulative burdens and vulnerabilities** — generally a *worse* outcome.
-""")
-st.write("""
-The **Environmental Justice Index (EJI)** measures cumulative environmental, social, and health burdens 
-in communities relative to others across the U.S.  
+st.sidebar.title("🏡 Home")
 
-Use the dropdowns below to explore data for **New Mexico** or specific **counties**, and optionally compare datasets side-by-side.
-""")
-st.info("🔴 Rows highlighted in red represent areas with **Very High Concern/Burden** in one or more areas (EJI ≥ 0.76).")
-
-# --- LOAD DATA ---
+# ------------------------------
+# Load Data
+# ------------------------------
 @st.cache_data
 def load_data():
     state_url = "https://github.com/rileycochrell/rc-EJI-Visualization-NM-2try/raw/refs/heads/main/data/2024/clean/2024EJI_StateAverages_RPL.csv"
     county_url = "https://github.com/rileycochrell/rc-EJI-Visualization-NM-2try/raw/refs/heads/main/data/2024/clean/2024EJI_NewMexico_CountyMeans.csv"
-    try:
-        state_df = pd.read_csv(state_url)
-        county_df = pd.read_csv(county_url)
-        return state_df, county_df
-    except Exception as e:
-        st.error(f"Error loading data: {e}")
-        return None, None
+    state_df = pd.read_csv(state_url)
+    county_df = pd.read_csv(county_url)
+    return state_df, county_df
 
-state_df, county_df = load_data()
-if state_df is None or county_df is None:
+try:
+    state_df, county_df = load_data()
+except Exception as e:
+    st.error(f"Error loading data: {e}")
     st.stop()
 
-# --- COLUMN RENAME MAP ---
 rename_map = {
     "Mean_EJI": "RPL_EJI",
     "Mean_EBM": "RPL_EBM",
@@ -86,131 +75,160 @@ dataset2_rainbows = {
     "RPL_EJI_CBM": "#f17cb0"
 }
 
-# --- HELPER: CONTRAST COLOR ---
+# ------------------------------
+# Helper Functions
+# ------------------------------
 def get_contrast_color(hex_color):
-    rgb = tuple(int(hex_color.strip("#")[i:i+2], 16) for i in (0, 2, 4))
-    brightness = (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2])
+    try:
+        rgb = tuple(int(hex_color.strip("#")[i:i+2], 16) for i in (0, 2, 4))
+    except Exception:
+        return "black"
+    brightness = (0.299*rgb[0] + 0.587*rgb[1] + 0.114*rgb[2])
     return "black" if brightness > 150 else "white"
 
-# --- CUSTOM COLORED TABLE ---
 def display_colored_table_html(df, color_map, pretty_map, title=None):
     if isinstance(df, pd.Series):
         df = df.to_frame().T
     df_display = df.rename(columns=pretty_map)
     if title:
         st.markdown(f"### {title}")
-
     header_html = "<tr>"
     for col in df_display.columns:
-        original_col = [k for k, v in pretty_map.items() if v == col]
-        color = color_map.get(original_col[0], "#FFFFFF") if original_col else "#FFFFFF"
-        rgb = tuple(int(color.strip("#")[i:i+2], 16) for i in (0, 2, 4))
-        brightness = (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2])
-        text_color = "black" if brightness > 150 else "white"
+        orig = [k for k,v in pretty_map.items() if v == col]
+        color = color_map.get(orig[0], "#FFFFFF") if orig else "#FFFFFF"
+        text_color = get_contrast_color(color)
         header_html += f'<th style="background-color:{color};color:{text_color};padding:6px;text-align:center;">{col}</th>'
     header_html += "</tr>"
-
     body_html = ""
     for _, row in df_display.iterrows():
-        highlight = any(
-            (isinstance(val, (float, int)) and val >= 0.76)
-            or (isinstance(val, str) and "very high" in val.lower())
-            for val in row
-        )
+        highlight = any([(isinstance(v, (int,float)) and v >= 0.76) or (isinstance(v, str) and "very high" in v.lower()) for v in row])
         row_style = "background-color:#ffb3b3;" if highlight else ""
         body_html += f"<tr style='{row_style}'>"
         for val in row:
-            cell_val = val if not isinstance(val, float) else f"{val:.3f}"
-            body_html += f"<td style='text-align:center;padding:4px;border:1px solid #ccc'>{cell_val}</td>"
+            cell_text = f"{val:.3f}" if isinstance(val, float) else val
+            body_html += f"<td style='text-align:center;padding:4px;border:1px solid #ccc'>{cell_text}</td>"
         body_html += "</tr>"
-    st.markdown(
-        f"<table style='border-collapse:collapse;width:100%;border:1px solid black;'>{header_html}{body_html}</table>",
-        unsafe_allow_html=True,
-    )
+    table_html = f"<table style='border-collapse:collapse;width:100%;border:1px solid black;'>{header_html}{body_html}</table>"
+    st.markdown(table_html, unsafe_allow_html=True)
 
-# --- GRAPH SETTINGS ---
-NO_DATA_HEIGHT = 0.5
+NO_DATA_HEIGHT = 0.05
 NO_DATA_PATTERN = dict(shape="/", fgcolor="black", bgcolor="white", size=6)
 
-def make_contrast_texts(colors, metrics, values, area_label=None):
-    texts, font_colors = [], []
-    for color, m, v in zip(colors, metrics, values):
-        txt = f"{pretty.get(m, m)}<br>{area_label if area_label else ''}<br>{'No Data' if pd.isna(v) else f'{v:.2f}'}"
-        rgb = [int(color.lstrip('#')[i:i+2], 16) for i in (0,2,4)]
-        luminance = 0.299*rgb[0] + 0.587*rgb[1] + 0.114*rgb[2]
-        font_colors.append("black" if luminance > 140 else "white")
-        texts.append(txt)
-    return texts, font_colors
+def build_texts_and_colors(colors, area_label, values):
+    texts, fonts = [], []
+    for c, v in zip(colors, values):
+        if pd.isna(v):
+            texts.append("No Data")
+            fonts.append("black")
+        else:
+            val_str = f"{v:.3f}"
+            texts.append(f"{area_label}<br>{val_str}" if area_label else f"{val_str}")
+            fonts.append(get_contrast_color(c))
+    return texts, fonts
 
-# --- SINGLE CHART ---
-def plot_single_chart(title, data_values, metrics, colors, area_label=None):
-    vals = data_values.values
+# ------------------------------
+# Graph Functions
+# ------------------------------
+def plot_single_chart(title, data_values, area_label=None):
+    vals = np.array([np.nan if pd.isna(v) else float(v) for v in data_values.values])
+    color_list = [dataset1_rainbows[m] for m in metrics]
     has_y = [v if not pd.isna(v) else 0 for v in vals]
-    no_y = [NO_DATA_HEIGHT if pd.isna(v) else 0 for v in vals]
-    color_list = [colors[m] for m in metrics]
-    texts, fonts = make_contrast_texts(color_list, metrics, vals, area_label)
+    nodata_y = [NO_DATA_HEIGHT if pd.isna(v) else 0 for v in vals]
+    texts, fonts = build_texts_and_colors(color_list, area_label, vals)
+
     fig = go.Figure()
     fig.add_trace(go.Bar(
         x=[pretty[m] for m in metrics], y=has_y,
-        marker_color=color_list, name="Has Data",
-        text=texts, textposition="inside", textfont=dict(size=10, color=fonts)
+        marker_color=color_list,
+        text=texts, texttemplate="%{text}", textposition="inside",
+        textfont=dict(size=10, color=fonts),
+        hovertemplate="%{x}<br>%{text}<extra></extra>",
+        showlegend=False
     ))
     fig.add_trace(go.Bar(
-        x=[pretty[m] for m in metrics], y=no_y,
+        x=[pretty[m] for m in metrics], y=nodata_y,
         marker=dict(color="white", pattern=NO_DATA_PATTERN),
+        text=["No Data" if pd.isna(v) else "" for v in vals],
+        textposition="outside", textfont=dict(size=10, color="black"),
+        hovertemplate="%{x}<br>%{text}<extra></extra>",
         name="No Data"
     ))
     fig.update_layout(
         title=title,
-        yaxis=dict(title="Percentile Rank Value", range=[0,1], dtick=0.25),
-        xaxis_title="EJI Metric", barmode="overlay",
-        legend=dict(orientation="h", y=-0.25, x=0.5, xanchor="center")
+        yaxis=dict(title="Percentile Rank Value", range=[0, 1], dtick=0.25),
+        xaxis_title="Environmental Justice Index Metric",
+        barmode="overlay",
+        legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
     )
     st.plotly_chart(fig, use_container_width=True)
 
-# --- COMPARISON CHART ---
-def plot_comparison(data1, data2, label1, label2, metrics):
-    vals1, vals2 = np.array(data1.values), np.array(data2.values)
+def plot_comparison(data1, data2, label1, label2):
+    vals1 = np.array([np.nan if pd.isna(v) else float(v) for v in data1.values])
+    vals2 = np.array([np.nan if pd.isna(v) else float(v) for v in data2.values])
+    metric_names = [pretty[m] for m in metrics]
+    colors1 = [dataset1_rainbows[m] for m in metrics]
+    colors2 = [dataset2_rainbows[m] for m in metrics]
     has1_y = [v if not pd.isna(v) else 0 for v in vals1]
+    nodata1_y = [NO_DATA_HEIGHT if pd.isna(v) else 0 for v in vals1]
     has2_y = [v if not pd.isna(v) else 0 for v in vals2]
-    no1_y = [NO_DATA_HEIGHT if pd.isna(v) else 0 for v in vals1]
-    no2_y = [NO_DATA_HEIGHT if pd.isna(v) else 0 for v in vals2]
-    texts1, font1 = make_contrast_texts([dataset1_rainbows[m] for m in metrics], metrics, vals1, label1)
-    texts2, font2 = make_contrast_texts([dataset2_rainbows[m] for m in metrics], metrics, vals2, label2)
+    nodata2_y = [NO_DATA_HEIGHT if pd.isna(v) else 0 for v in vals2]
+    texts1, fonts1 = build_texts_and_colors(colors1, label1, vals1)
+    texts2, fonts2 = build_texts_and_colors(colors2, label2, vals2)
+
     fig = go.Figure()
-    fig.add_trace(go.Bar(
-        x=[pretty[m] for m in metrics], y=has1_y,
-        marker_color=[dataset1_rainbows[m] for m in metrics],
-        name=label1, offsetgroup=0, text=texts1,
-        textposition="inside", textfont=dict(size=10, color=font1)
-    ))
-    fig.add_trace(go.Bar(
-        x=[pretty[m] for m in metrics], y=no1_y,
-        marker=dict(color="white", pattern=NO_DATA_PATTERN), showlegend=False, offsetgroup=0
-    ))
-    fig.add_trace(go.Bar(
-        x=[pretty[m] for m in metrics], y=has2_y,
-        marker_color=[dataset2_rainbows[m] for m in metrics],
-        name=label2, offsetgroup=1, text=texts2,
-        textposition="inside", textfont=dict(size=10, color=font2)
-    ))
-    fig.add_trace(go.Bar(
-        x=[pretty[m] for m in metrics], y=no2_y,
-        marker=dict(color="white", pattern=NO_DATA_PATTERN), showlegend=False, offsetgroup=1
-    ))
-    fig.add_trace(go.Bar(x=[None], y=[None], marker=dict(color="white", pattern=NO_DATA_PATTERN), name="No Data"))
+    fig.add_trace(go.Bar(x=metric_names, y=has1_y, marker_color=colors1,
+                         offsetgroup=0, width=0.35, text=texts1,
+                         texttemplate="%{text}", textposition="inside",
+                         textfont=dict(size=10, color=fonts1),
+                         hovertemplate="%{x}<br>%{text}<extra></extra>",
+                         showlegend=False))
+    fig.add_trace(go.Bar(x=metric_names, y=nodata1_y,
+                         marker=dict(color="white", pattern=NO_DATA_PATTERN),
+                         offsetgroup=0, width=0.35, showlegend=False))
+    fig.add_trace(go.Bar(x=metric_names, y=has2_y, marker_color=colors2,
+                         offsetgroup=1, width=0.35, text=texts2,
+                         texttemplate="%{text}", textposition="inside",
+                         textfont=dict(size=10, color=fonts2),
+                         hovertemplate="%{x}<br>%{text}<extra></extra>",
+                         showlegend=False))
+    fig.add_trace(go.Bar(x=metric_names, y=nodata2_y,
+                         marker=dict(color="white", pattern=NO_DATA_PATTERN),
+                         offsetgroup=1, width=0.35, showlegend=False))
+    fig.add_trace(go.Bar(x=[None], y=[None],
+                         marker=dict(color="white", pattern=NO_DATA_PATTERN),
+                         name="No Data"))
+
+    compare_table = pd.DataFrame({
+        "Metric": [pretty[m] for m in metrics],
+        label1: data1.values,
+        label2: data2.values
+    }).set_index("Metric").T
+    st.subheader("📊 Data Comparison Table")
+    display_colored_table_html(compare_table.reset_index(), dataset1_rainbows,
+                               {"index": "Metric", **pretty}, title=None)
+
     fig.update_layout(
         barmode="group",
-        title=f"EJI Comparison — {label1} vs {label2}",
-        yaxis=dict(title="Percentile Rank Value", range=[0,1], dtick=0.25),
-        legend=dict(orientation="h", y=-0.25, x=0.5, xanchor="center")
+        title=f"EJI Metric Comparison — {label1} vs {label2}",
+        yaxis=dict(title="Percentile Rank Value", range=[0, 1], dtick=0.25),
+        legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
     )
     st.plotly_chart(fig, use_container_width=True)
+    st.caption("_Note: darker bars represent the first dataset; lighter bars represent the second dataset._")
 
-# --- MAIN UI ---
+# ------------------------------
+# Main App Layout
+# ------------------------------
+st.title("🌎 Environmental Justice Index Visualization (New Mexico)")
+st.info("""
+**Interpreting the EJI Score:**  
+Lower EJI values (closer to 0) indicate *lower cumulative environmental and social burdens* — generally a good outcome.  
+Higher EJI values (closer to 1) indicate *higher cumulative burdens and vulnerabilities* — generally a worse outcome.
+""")
+st.write("Use the dropdowns below to explore data for **New Mexico** or specific **counties**.")
+st.info("🔴 Rows highlighted in red represent areas with **Very High Concern/Burden (EJI ≥ 0.76)**.")
+
 selected_parameter = st.selectbox("View EJI data for:", parameter1)
-st.write(f"**You selected:** {selected_parameter}")
-
 if selected_parameter == "County":
     selected_county = st.selectbox("Select a New Mexico County:", counties)
     subset = county_df[county_df["County"] == selected_county]
@@ -220,7 +238,7 @@ if selected_parameter == "County":
         st.subheader(f"📋 EJI Data for {selected_county}")
         display_colored_table_html(subset, dataset1_rainbows, pretty)
         county_values = subset[metrics].iloc[0]
-        plot_single_chart(f"EJI Metrics — {selected_county}", county_values, metrics, dataset1_rainbows, selected_county)
+        plot_single_chart(f"EJI Metrics — {selected_county}", county_values, area_label=selected_county)
         if st.checkbox("Compare with another dataset"):
             compare_type = st.radio("Compare with:", ["State", "County"])
             if compare_type == "State":
@@ -228,23 +246,22 @@ if selected_parameter == "County":
                 comp_row = state_df[state_df["State"] == comp_state]
                 if not comp_row.empty:
                     comp_values = comp_row[metrics].iloc[0]
-                    plot_comparison(county_values, comp_values, selected_county, comp_state, metrics)
+                    plot_comparison(county_values, comp_values, selected_county, comp_state)
             else:
                 comp_county = st.selectbox("Select county:", [c for c in counties if c != selected_county])
                 comp_row = county_df[county_df["County"] == comp_county]
                 if not comp_row.empty:
                     comp_values = comp_row[metrics].iloc[0]
-                    plot_comparison(county_values, comp_values, selected_county, comp_county, metrics)
-
-elif selected_parameter == "New Mexico":
+                    plot_comparison(county_values, comp_values, selected_county, comp_county)
+else:
     nm_row = state_df[state_df["State"].str.strip().str.lower() == "new mexico"]
     if nm_row.empty:
-        st.warning("No New Mexico data found in the state file.")
+        st.warning("No New Mexico data found.")
     else:
         st.subheader("📋 New Mexico Statewide EJI Scores")
         display_colored_table_html(nm_row, dataset1_rainbows, pretty)
         nm_values = nm_row[metrics].iloc[0]
-        plot_single_chart("EJI Metrics — New Mexico", nm_values, metrics, dataset1_rainbows, "New Mexico")
+        plot_single_chart("EJI Metrics — New Mexico", nm_values, area_label="New Mexico")
         if st.checkbox("Compare with another dataset"):
             compare_type = st.radio("Compare with:", ["State", "County"])
             if compare_type == "State":
@@ -252,13 +269,13 @@ elif selected_parameter == "New Mexico":
                 comp_row = state_df[state_df["State"] == comp_state]
                 if not comp_row.empty:
                     comp_values = comp_row[metrics].iloc[0]
-                    plot_comparison(nm_values, comp_values, "New Mexico", comp_state, metrics)
+                    plot_comparison(nm_values, comp_values, "New Mexico", comp_state)
             else:
                 comp_county = st.selectbox("Select county:", counties)
                 comp_row = county_df[county_df["County"] == comp_county]
                 if not comp_row.empty:
                     comp_values = comp_row[metrics].iloc[0]
-                    plot_comparison(nm_values, comp_values, "New Mexico", comp_county, metrics)
+                    plot_comparison(nm_values, comp_values, "New Mexico", comp_county)
 
 st.divider()
 st.caption("Data Source: CDC Environmental Justice Index | Visualization by Riley Cochrell")
