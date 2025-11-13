@@ -135,44 +135,61 @@ def build_texts_and_colors(colors, area_label, values):
 # ------------------------------
 # Graph Functions
 # ------------------------------
-def plot_single_chart(title, data_values, area_label=None):
-    vals = np.array([np.nan if pd.isna(v) else float(v) for v in data_values.values])
-    color_list = [dataset1_rainbows[m] for m in metrics]
-    has_y = [v if not pd.isna(v) else 0 for v in vals]
-    nodata_y = [NO_DATA_HEIGHT if pd.isna(v) else 0 for v in vals]
-    texts, fonts = build_texts_and_colors(color_list, area_label, vals)
+def plot_single_chart(title, values, area_name):
+    import plotly.graph_objects as go
+    metrics = values.index.tolist()
+    scores = values.values.tolist()
+
+    # Handle missing data
+    no_data = [m for m, s in zip(metrics, scores) if pd.isna(s)]
+    available_metrics = [m for m, s in zip(metrics, scores) if not pd.isna(s)]
+    available_scores = [s for s in scores if not pd.isna(s)]
 
     fig = go.Figure()
-    # Main bars
+
+    # Bars for valid data
     fig.add_trace(go.Bar(
-        x=[pretty[m] for m in metrics],
-        y=has_y,
-        marker_color=color_list,
-        text=texts,
-        texttemplate="%{text}",
-        textposition="inside",
-        textfont=dict(size=10, color=fonts),
-        hovertemplate="%{x}<br>%{text}<extra></extra>",
-        showlegend=False
+        x=available_metrics,
+        y=available_scores,
+        marker_color="#4CAF50",
+        name=area_name,
+        hovertemplate="%{x}: %{y:.2f}<extra></extra>"
     ))
-    # No data
-    fig.add_trace(go.Bar(
-        x=[pretty[m] for m in metrics],
-        y=nodata_y,
-        marker=dict(color="lightgray", pattern=NO_DATA_PATTERN),
-        text=["No Data" if pd.isna(v) else "" for v in vals],
-        textposition="outside",
-        textfont=dict(size=10, color="black"),
-        hovertemplate="%{x}<br>%{text}<extra></extra>",
-        name="No Data"
-    ))
+
+    # Bars for missing data
+    if no_data:
+        fig.add_trace(go.Bar(
+            x=no_data,
+            y=[0]*len(no_data),
+            marker_color="#888888",
+            text=["No Data"] * len(no_data),
+            hovertemplate="%{x}<br>%{text}<extra></extra>",
+            name="No Data"
+        ))
+
+    # FIXED layout — replaced titlefont with proper nested dict
     fig.update_layout(
         title=title,
-        xaxis=dict(title="Environmental Justice Index Metric", titlefont=dict(color="#222", size=14)),
-        yaxis=dict(title="Percentile Rank Value", titlefont=dict(color="#222", size=14), range=[0, 1], dtick=0.25),
-        barmode="overlay",
-        legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
+        xaxis=dict(
+            title=dict(
+                text="Environmental Justice Index Metric",
+                font=dict(color="white")
+            ),
+            tickfont=dict(color="white")
+        ),
+        yaxis=dict(
+            title=dict(
+                text="Percentile Rank Value",
+                font=dict(color="white")
+            ),
+            tickfont=dict(color="white")
+        ),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="white"),
+        height=500
     )
+
     st.plotly_chart(fig, use_container_width=True)
 
 def plot_comparison(data1, data2, label1, label2):
