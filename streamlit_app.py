@@ -158,7 +158,7 @@ def plot_single_chart(title, data_values, area_label=None):
         barmode="overlay",
         legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width=True)
 
 def plot_comparison(data1, data2, label1, label2):
     vals1 = np.array([np.nan if pd.isna(v) else float(v) for v in data1.values])
@@ -211,7 +211,7 @@ def plot_comparison(data1, data2, label1, label2):
         yaxis=dict(title="Percentile Rank Value", range=[0, 1], dtick=0.25),
         legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width=True)
     st.caption("_Note: darker bars represent the first dataset; lighter bars represent the second dataset._")
 
 # ------------------------------
