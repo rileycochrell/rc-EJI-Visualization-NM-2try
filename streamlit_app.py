@@ -12,6 +12,8 @@ st.set_page_config(
 )
 st.navigation([
     st.Page("streamlit_app.py", title="Home", icon="🏡"),
+    st.Page("1_What_Goes_Into_EJI.py", title="What Goes Into the EJI?", icon="🏡"),
+    st.Page("2_EJI_Scale_and_Categories.py", title="Home", icon="🏡"),
     ])
 
 st.title("🌎 Environmental Justice Index Visualization (New Mexico)")
