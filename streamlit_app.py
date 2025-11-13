@@ -12,7 +12,7 @@ def main():
         page_icon="🏡",
         layout="wide"
     )
-st.set_page_config(page_title="Environmental Justice Index (EJI) — New Mexico", layout="wide")
+st.set_page_config(page_title="Environmental Justice Index (EJI) — New Mexico", page_icon="🌎", layout="wide")
 
 # ------------------------------
 # Load Data
