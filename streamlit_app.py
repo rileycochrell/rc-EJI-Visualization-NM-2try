@@ -204,19 +204,42 @@ def plot_comparison(data1, data2, label1, label2, metrics):
 
 # --- SINGLE PLOT ---
 def plot_single_chart(title, data_values):
-    fig = px.bar(
-        x=[pretty.get(m, m) for m in metrics],
-        y=data_values.values,
-        color=metrics,
-        color_discrete_map=dataset1_rainbows,
-        labels={"x": "Environmental Justice Index Metric", "y": "Percentile Rank Value"},
-        title=title
-    )
+    # Convert to DataFrame so we can manipulate missing values easily
+    df = pd.DataFrame({
+        "Metric": metrics,
+        "Value": data_values.values
+    })
+    
+    # Determine data status (Has Data vs No Data)
+    df["DataStatus"] = df["Value"].apply(lambda v: "No Data" if pd.isna(v) else "Has Data")
+    
+    # Replace NaN with 0 just for plotting (so the bar still appears)
+    df["Value_display"] = df["Value"].fillna(0)
+    
+    # Use lighter gray color for missing values
+    color_map = dataset1_rainbows.copy()
+    no_data_color = "#D3D3D3"  # light gray
+    df["Color"] = df.apply(lambda row: color_map[row["Metric"]] if row["DataStatus"] == "Has Data" else no_data_color, axis=1)
+    
+    # Build Plotly bar chart
+    fig = go.Figure()
+
+    fig.add_trace(go.Bar(
+        x=[pretty.get(m, m) for m in df["Metric"]],
+        y=df["Value_display"],
+        marker_color=df["Color"],
+        text=[("No Data" if s == "No Data" else f"{v:.3f}") for v, s in zip(df["Value"], df["DataStatus"])],
+        textposition="outside",
+        hovertemplate="%{x}<br>%{text}<extra></extra>"
+    ))
 
     fig.update_layout(
+        title=title,
         yaxis=dict(title="Percentile Rank Value", range=[0, 1], dtick=0.25),
+        xaxis_title="Environmental Justice Index Metric",
         showlegend=False
     )
+
     st.plotly_chart(fig, use_container_width=True)
 
 # --- MAIN CONTENT ---
