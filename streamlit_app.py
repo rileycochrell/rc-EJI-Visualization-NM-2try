@@ -148,8 +148,11 @@ def plot_single_chart(title, data_values, area_label=None):
     ))
     fig.update_layout(
         title=title,
-        yaxis=dict(title="Percentile Rank Value", range=[0, 1], dtick=0.25),
-        xaxis_title="Environmental Justice Index Metric",
+        xaxis=dict(title="Environmental Justice Index Metric",
+            titlefont=dict(color="#222222", size=14)),
+        yaxis=dict(title="Percentile Rank Value",
+            titlefont=dict(color="#222222", size=14),
+            range=[0,1], dtick=0.25),
         barmode="overlay",
         legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
     )
@@ -203,7 +206,11 @@ def plot_comparison(data1, data2, label1, label2):
     fig.update_layout(
         barmode="group",
         title=f"EJI Metric Comparison — {label1} vs {label2}",
-        yaxis=dict(title="Percentile Rank Value", range=[0, 1], dtick=0.25),
+        xaxis=dict(title="Environmental Justice Index Metric",
+            titlefont=dict(color="#222222", size=14)),
+        yaxis=dict(title="Percentile Rank Value",
+            titlefont=dict(color="#222222", size=14),
+            range=[0,1], dtick=0.25),
         legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
     )
     st.plotly_chart(fig, use_container_width=True)
