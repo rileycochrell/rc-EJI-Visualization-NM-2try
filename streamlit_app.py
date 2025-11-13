@@ -11,8 +11,7 @@ st.set_page_config(
     page_icon="🌎",
     layout="wide"
 )
-st.sidebar:
-    st.title("Navigation")
+
 
 # ------------------------------
 # Load Data
