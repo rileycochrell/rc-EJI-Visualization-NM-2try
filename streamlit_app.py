@@ -7,13 +7,13 @@ import plotly.graph_objects as go
 # Page Config
 # ------------------------------
 st.set_page_config(
-    page_title="TEAM 23: Environmental Justice Index (EJI) — New Mexico",
-    page_icon="🌎",
+    page_title="TEAM 23: 🌎 Environmental Justice in New Mexico — 📊 Environmental Justice Index (EJI) Visualization",
+    page_icon="📊",
     layout="wide"
 )
 st.markdown('<style>div[data-testid="stSidebarNav"] {display: none;}</style>', unsafe_allow_html=True)
 with st.sidebar:
-    st.page_link('streamlit_app.py', label='EJI Visualization', icon='🌎')
+    st.page_link('streamlit_app.py', label='EJI Visualization', icon='📊')
     st.page_link('pages/1_What_Goes_Into_EJI.py', label='What Goes Into the EJI?', icon='🧩')
     st.page_link('pages/2_EJI_Scale_and_Categories.py', label='Understanding the EJI Scale', icon='🌡️')
 
@@ -238,7 +238,7 @@ if selected_parameter == "County":
     if subset.empty:
         st.warning(f"No data found for {selected_county}.")
     else:
-        st.subheader(f"📋 EJI Data for {selected_county}")
+        st.subheader(f"📊 EJI Data for {selected_county}")
         display_colored_table_html(subset, dataset1_rainbows, pretty)
         county_values = subset[metrics].iloc[0]
         plot_single_chart(f"EJI Metrics — {selected_county}", county_values, area_label=selected_county)
@@ -261,7 +261,7 @@ else:
     if nm_row.empty:
         st.warning("No New Mexico data found.")
     else:
-        st.subheader("📋 New Mexico Statewide EJI Scores")
+        st.subheader("📊 New Mexico Statewide EJI Scores")
         display_colored_table_html(nm_row, dataset1_rainbows, pretty)
         nm_values = nm_row[metrics].iloc[0]
         plot_single_chart("EJI Metrics — New Mexico", nm_values, area_label="New Mexico")
