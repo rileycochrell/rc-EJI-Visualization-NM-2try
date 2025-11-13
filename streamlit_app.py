@@ -139,13 +139,18 @@ def plot_single_chart(title, data_values, area_label=None):
     nodata_y = [NO_DATA_HEIGHT if pd.isna(v) else 0 for v in vals]
     texts, fonts = build_texts_and_colors(color_list, area_label, vals)
 
+    wingardium_leviOsa = [
+        "No Data" if pd.isna(v) else f"{v:.2f}"
+        for v in vals
+    ]
     fig = go.Figure()
     fig.add_trace(go.Bar(
         x=[pretty[m] for m in metrics], y=has_y,
         marker_color=color_list,
         text=texts, texttemplate="%{text}", textposition="inside",
         textfont=dict(size=10, color=fonts),
-        hovertemplate="%{x}<br>%{text}<extra></extra>",
+        customdata=wingardium_leviOsa,
+        hovertemplate="%{x}<br>%{customdata}<extra></extra>",
         showlegend=False
     ))
     fig.add_trace(go.Bar(
@@ -153,7 +158,8 @@ def plot_single_chart(title, data_values, area_label=None):
         marker=dict(color="white", pattern=NO_DATA_PATTERN),
         text=["No Data" if pd.isna(v) else "" for v in vals],
         textposition="outside", textfont=dict(size=10, color="black"),
-        hovertemplate="%{x}<br>%{text}<extra></extra>",
+        customdata=wingardium_leviOsa,
+        hovertemplate="%{x}<br>%{customdata}<extra></extra>",
         name="No Data"
     ))
     fig.update_layout(
