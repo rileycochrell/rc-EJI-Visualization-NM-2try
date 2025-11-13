@@ -10,6 +10,9 @@ st.set_page_config(
     page_icon="🌎",
     layout="wide"
 )
+st.navigation([
+    st.Page("streamlit_app.py", title="Home", icon="🏡"),
+    ])
 
 st.title("🌎 Environmental Justice Index Visualization (New Mexico)")
 st.info("""
