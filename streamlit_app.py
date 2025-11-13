@@ -8,7 +8,6 @@ st.set_page_config(
     page_icon="🌎",
     layout="wide"
     )
-st.sidebar.title("🏡 Home")
 
 st.set_page_config(page_title="Environmental Justice Index (EJI) — New Mexico", layout="wide")
 
