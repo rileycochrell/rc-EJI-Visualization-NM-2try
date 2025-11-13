@@ -152,7 +152,7 @@ def plot_single_chart(title, values, area_label):
         x=available_metrics,
         y=available_scores,
         marker_color="#4CAF50",
-        name=area_name,
+        name=area_label,
         hovertemplate="%{x}: %{y:.2f}<extra></extra>"
     ))
 
