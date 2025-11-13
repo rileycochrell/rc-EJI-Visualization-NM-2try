@@ -2,10 +2,14 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
-st.set_page_config(page_title="EJI Scale and Categories", layout="wide")
+st.set_page_config(
+    page_title="TEAM 23: Environmental Justice in New Mexico — 🌡️ Understanding the EJI Scale",
+    page_icon="🌎",
+    layout="wide"
+)
 st.markdown('<style>div[data-testid="stSidebarNav"] {display: none;}</style>', unsafe_allow_html=True)
 with st.sidebar:
-    st.page_link('streamlit_app.py', label='EJI Visualization', icon='🌎')
+    st.page_link('streamlit_app.py', label='EJI Visualization', icon='📊')
     st.page_link('pages/1_What_Goes_Into_EJI.py', label='What Goes Into the EJI?', icon='🧩')
     st.page_link('pages/2_EJI_Scale_and_Categories.py', label='Understanding the EJI Scale', icon='🌡️')
 
