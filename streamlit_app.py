@@ -3,6 +3,9 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 
+# ------------------------------
+# App Config
+# ------------------------------
 st.set_page_config(
     page_title="Environmental Justice Index (EJI) — New Mexico",
     page_icon="🌎",
@@ -87,7 +90,6 @@ def display_colored_table_html(df, color_map, pretty_map, title=None):
     if title:
         st.markdown(f"### {title}")
 
-    # Header
     header_html = "<tr>"
     for col in df_display.columns:
         orig = [k for k, v in pretty_map.items() if v == col]
@@ -96,7 +98,6 @@ def display_colored_table_html(df, color_map, pretty_map, title=None):
         header_html += f'<th style="background-color:{color};color:{text_color};padding:6px;text-align:center;">{col}</th>'
     header_html += "</tr>"
 
-    # Body
     body_html = ""
     for _, row in df_display.iterrows():
         highlight = any(
@@ -115,7 +116,7 @@ def display_colored_table_html(df, color_map, pretty_map, title=None):
     st.markdown(table_html, unsafe_allow_html=True)
 
 # ------------------------------
-# Plotting Helpers
+# Plotting
 # ------------------------------
 NO_DATA_HEIGHT = 0.05
 NO_DATA_PATTERN = dict(shape="/", fgcolor="gray", bgcolor="lightgray", size=6)
@@ -128,68 +129,59 @@ def build_texts_and_colors(colors, area_label, values):
             fonts.append("black")
         else:
             val_str = f"{v:.3f}"
-            texts.append(f"{area_label}<br>{val_str}" if area_label else f"{val_str}")
+            texts.append(f"{area_label}<br>{val_str}")
             fonts.append(get_contrast_color(c))
     return texts, fonts
 
-# ------------------------------
-# Graph Functions
-# ------------------------------
-def plot_single_chart(title, values, area_label):
-    import plotly.graph_objects as go
+def plot_single_chart(title, values, area_name):
     metrics = values.index.tolist()
     scores = values.values.tolist()
+    colors = [dataset1_rainbows[m] for m in metrics]
 
-    # Handle missing data
-    no_data = [m for m, s in zip(metrics, scores) if pd.isna(s)]
-    available_metrics = [m for m, s in zip(metrics, scores) if not pd.isna(s)]
-    available_scores = [s for s in scores if not pd.isna(s)]
+    texts, fonts = build_texts_and_colors(colors, area_name, scores)
 
     fig = go.Figure()
-
-    # Bars for valid data
     fig.add_trace(go.Bar(
-        x=available_metrics,
-        y=available_scores,
-        marker_color="#4CAF50",
-        name=area_label,
-        hovertemplate="%{x}: %{y:.2f}<extra></extra>"
+        x=[pretty[m] for m in metrics],
+        y=[0 if pd.isna(v) else v for v in scores],
+        marker_color=colors,
+        text=texts,
+        texttemplate="%{text}",
+        textposition="inside",
+        textfont=dict(size=10, color=fonts),
+        hovertemplate="%{x}<br>%{text}<extra></extra>",
+        showlegend=False
     ))
 
-    # Bars for missing data
-    if no_data:
+    # Add grey striped for missing data
+    no_data_metrics = [pretty[m] for m, v in zip(metrics, scores) if pd.isna(v)]
+    if no_data_metrics:
         fig.add_trace(go.Bar(
-            x=no_data,
-            y=[0]*len(no_data),
-            marker_color="#888888",
-            text=["No Data"] * len(no_data),
-            hovertemplate="%{x}<br>%{text}<extra></extra>",
+            x=no_data_metrics,
+            y=[NO_DATA_HEIGHT]*len(no_data_metrics),
+            marker=dict(color="lightgray", pattern=NO_DATA_PATTERN),
+            hoverinfo="none",
+            showlegend=True,
             name="No Data"
         ))
 
-    # FIXED layout — replaced titlefont with proper nested dict
     fig.update_layout(
         title=title,
         xaxis=dict(
-            title=dict(
-                text="Environmental Justice Index Metric",
-                font=dict(color="white")
-            ),
-            tickfont=dict(color="white")
+            title=dict(text="Environmental Justice Index Metric", font=dict(color="#222")),
+            tickfont=dict(color="#222", size=12)
         ),
         yaxis=dict(
-            title=dict(
-                text="Percentile Rank Value",
-                font=dict(color="white")
-            ),
-            tickfont=dict(color="white")
+            title=dict(text="Percentile Rank Value", font=dict(color="#222")),
+            tickfont=dict(color="#222", size=12),
+            range=[0, 1]
         ),
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="white"),
-        height=500
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        font=dict(color="#222"),
+        height=500,
+        legend=dict(orientation="h", y=-0.25, x=0.5, xanchor="center")
     )
-
     st.plotly_chart(fig, use_container_width=True)
 
 def plot_comparison(data1, data2, label1, label2):
@@ -208,15 +200,17 @@ def plot_comparison(data1, data2, label1, label2):
     texts2, fonts2 = build_texts_and_colors(colors2, label2, vals2)
 
     fig = go.Figure()
-    fig.add_trace(go.Bar(x=metric_names, y=has1_y, marker_color=colors1, offsetgroup=0, width=0.35,
-                         text=texts1, texttemplate="%{text}", textposition="inside",
+    fig.add_trace(go.Bar(x=metric_names, y=has1_y, marker_color=colors1,
+                         offsetgroup=0, width=0.35, text=texts1,
+                         texttemplate="%{text}", textposition="inside",
                          textfont=dict(size=10, color=fonts1),
                          hovertemplate="%{x}<br>%{text}<extra></extra>", showlegend=False))
     fig.add_trace(go.Bar(x=metric_names, y=nodata1_y,
                          marker=dict(color="lightgray", pattern=NO_DATA_PATTERN),
                          offsetgroup=0, width=0.35, showlegend=False))
-    fig.add_trace(go.Bar(x=metric_names, y=has2_y, marker_color=colors2, offsetgroup=1, width=0.35,
-                         text=texts2, texttemplate="%{text}", textposition="inside",
+    fig.add_trace(go.Bar(x=metric_names, y=has2_y, marker_color=colors2,
+                         offsetgroup=1, width=0.35, text=texts2,
+                         texttemplate="%{text}", textposition="inside",
                          textfont=dict(size=10, color=fonts2),
                          hovertemplate="%{x}<br>%{text}<extra></extra>", showlegend=False))
     fig.add_trace(go.Bar(x=metric_names, y=nodata2_y,
@@ -226,38 +220,40 @@ def plot_comparison(data1, data2, label1, label2):
                          marker=dict(color="lightgray", pattern=NO_DATA_PATTERN),
                          name="No Data"))
 
-    # ✅ FIX: Always show data table after chart
+    st.subheader("📊 Data Comparison Table")
     compare_table = pd.DataFrame({
         "Metric": [pretty[m] for m in metrics],
         label1: data1.values,
         label2: data2.values
     })
-    st.subheader("📊 Data Comparison Table")
     display_colored_table_html(compare_table, dataset1_rainbows, {"Metric": "Metric", **pretty})
 
     fig.update_layout(
         barmode="group",
         title=f"EJI Metric Comparison — {label1} vs {label2}",
-        xaxis=dict(title="Environmental Justice Index Metric", titlefont=dict(color="#222", size=14)),
-        yaxis=dict(title="Percentile Rank Value", titlefont=dict(color="#222", size=14), range=[0, 1], dtick=0.25),
-        legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
+        xaxis=dict(title="Environmental Justice Index Metric", titlefont=dict(color="#222")),
+        yaxis=dict(title="Percentile Rank Value", titlefont=dict(color="#222"), range=[0, 1]),
+        legend=dict(orientation="h", y=-0.25, x=0.5, xanchor="center")
     )
     st.plotly_chart(fig, use_container_width=True)
     st.caption("_Note: darker bars represent the first dataset; lighter bars represent the second dataset._")
 
 # ------------------------------
-# Main App Layout
+# Main Layout
 # ------------------------------
+st.sidebar.title("🏡 EJI Visualization — Home")
+
 st.title("🌎 Environmental Justice Index Visualization (New Mexico)")
 st.info("""
 **Interpreting the EJI Score:**  
-Lower EJI values (closer to 0) indicate *lower cumulative environmental and social burdens* — generally a good outcome.  
-Higher EJI values (closer to 1) indicate *higher cumulative burdens and vulnerabilities* — generally a worse outcome.
+Lower EJI values (closer to 0) → lower cumulative environmental/social burdens (good).  
+Higher EJI values (closer to 1) → higher cumulative burdens/vulnerabilities (worse).
 """)
-st.write("Use the dropdowns below to explore data for **New Mexico** or specific **counties**.")
-st.info("🔴 Rows highlighted in red represent areas with **Very High Concern/Burden (EJI ≥ 0.76)**.")
+st.write("Use the dropdowns below to explore **New Mexico** or specific **counties**.")
+st.info("🔴 Rows highlighted in red = areas with **Very High Concern/Burden (EJI ≥ 0.76)**.")
 
 selected_parameter = st.selectbox("View EJI data for:", parameter1)
+
 if selected_parameter == "County":
     selected_county = st.selectbox("Select a New Mexico County:", counties)
     subset = county_df[county_df["County"] == selected_county]
@@ -267,7 +263,8 @@ if selected_parameter == "County":
         st.subheader(f"📋 EJI Data for {selected_county}")
         display_colored_table_html(subset, dataset1_rainbows, pretty)
         county_values = subset[metrics].iloc[0]
-        plot_single_chart(f"EJI Metrics — {selected_county}", county_values, area_label=selected_county)
+        plot_single_chart(f"EJI Metrics — {selected_county}", county_values, area_name=selected_county)
+
         if st.checkbox("Compare with another dataset"):
             compare_type = st.radio("Compare with:", ["State", "County"])
             if compare_type == "State":
@@ -290,7 +287,8 @@ else:
         st.subheader("📋 New Mexico Statewide EJI Scores")
         display_colored_table_html(nm_row, dataset1_rainbows, pretty)
         nm_values = nm_row[metrics].iloc[0]
-        plot_single_chart("EJI Metrics — New Mexico", nm_values, area_label="New Mexico")
+        plot_single_chart("EJI Metrics — New Mexico", nm_values, area_name="New Mexico")
+
         if st.checkbox("Compare with another dataset"):
             compare_type = st.radio("Compare with:", ["State", "County"])
             if compare_type == "State":
@@ -308,3 +306,4 @@ else:
 
 st.divider()
 st.caption("Data Source: CDC Environmental Justice Index | Visualization by Riley Cochrell")
+
