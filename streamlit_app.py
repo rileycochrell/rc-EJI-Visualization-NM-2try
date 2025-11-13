@@ -6,12 +6,7 @@ import plotly.graph_objects as go
 # ------------------------------
 # Page Config
 # ------------------------------
-st.set_page_config(
-    page_title="Environmental Justice Index (EJI) — New Mexico",
-    page_icon="🌎",
-    layout="wide"
-)
-st.sidebar.title("🏡 Home")
+st.set_page_config(page_title="Environmental Justice Index (EJI) — New Mexico", page_icon="🌎", layout="wide")
 
 # ------------------------------
 # Load Data
@@ -109,7 +104,7 @@ def display_colored_table_html(df, color_map, pretty_map, title=None):
     table_html = f"<table style='border-collapse:collapse;width:100%;border:1px solid black;'>{header_html}{body_html}</table>"
     st.markdown(table_html, unsafe_allow_html=True)
 
-NO_DATA_HEIGHT = 0.05
+NO_DATA_HEIGHT = 0.5
 NO_DATA_PATTERN = dict(shape="/", fgcolor="black", bgcolor="white", size=6)
 
 def build_texts_and_colors(colors, area_label, values):
