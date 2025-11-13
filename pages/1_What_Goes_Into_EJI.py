@@ -1,12 +1,19 @@
 import streamlit as st
 
-st.set_page_config(page_title="What Goes Into EJI?", layout="wide")
-
+# ------------------------------
+# Page Config
+# ------------------------------
+st.set_page_config(
+    page_title="TEAM 23: Environmental Justice in New Mexico — 🧩 What Goes Into the EJI?",
+    page_icon="🌎",
+    layout="wide"
+)
 st.markdown('<style>div[data-testid="stSidebarNav"] {display: none;}</style>', unsafe_allow_html=True)
 with st.sidebar:
-    st.page_link('streamlit_app.py', label='EJI Visualization', icon='🌎')
+    st.page_link('streamlit_app.py', label='EJI Visualization', icon='📊')
     st.page_link('pages/1_What_Goes_Into_EJI.py', label='What Goes Into the EJI?', icon='🧩')
     st.page_link('pages/2_EJI_Scale_and_Categories.py', label='Understanding the EJI Scale', icon='🌡️')
+
 
 st.title("🧩 What Goes Into the Environmental Justice Index (EJI)?")
 
