@@ -3,11 +3,12 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 
-st.set_page_config( 
+st.set_page_config(
     page_title="Environmental Justice Index (EJI) — New Mexico",
     page_icon="🌎",
-    layout="wide" 
+    layout="wide"
 )
+
 # ------------------------------
 # Load Data
 # ------------------------------
@@ -76,7 +77,7 @@ def get_contrast_color(hex_color):
         rgb = tuple(int(hex_color.strip("#")[i:i+2], 16) for i in (0, 2, 4))
     except Exception:
         return "black"
-    brightness = (0.299*rgb[0] + 0.587*rgb[1] + 0.114*rgb[2])
+    brightness = (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2])
     return "black" if brightness > 150 else "white"
 
 def display_colored_table_html(df, color_map, pretty_map, title=None):
@@ -85,27 +86,39 @@ def display_colored_table_html(df, color_map, pretty_map, title=None):
     df_display = df.rename(columns=pretty_map)
     if title:
         st.markdown(f"### {title}")
+
+    # Header
     header_html = "<tr>"
     for col in df_display.columns:
-        orig = [k for k,v in pretty_map.items() if v == col]
+        orig = [k for k, v in pretty_map.items() if v == col]
         color = color_map.get(orig[0], "#FFFFFF") if orig else "#FFFFFF"
         text_color = get_contrast_color(color)
         header_html += f'<th style="background-color:{color};color:{text_color};padding:6px;text-align:center;">{col}</th>'
     header_html += "</tr>"
+
+    # Body
     body_html = ""
     for _, row in df_display.iterrows():
-        highlight = any([(isinstance(v, (int,float)) and v >= 0.76) or (isinstance(v, str) and "very high" in v.lower()) for v in row])
+        highlight = any(
+            (isinstance(v, (int, float)) and v >= 0.76) or
+            (isinstance(v, str) and "very high" in v.lower())
+            for v in row
+        )
         row_style = "background-color:#ffb3b3;" if highlight else ""
         body_html += f"<tr style='{row_style}'>"
         for val in row:
             cell_text = f"{val:.3f}" if isinstance(val, float) else val
             body_html += f"<td style='text-align:center;padding:4px;border:1px solid #ccc'>{cell_text}</td>"
         body_html += "</tr>"
+
     table_html = f"<table style='border-collapse:collapse;width:100%;border:1px solid black;'>{header_html}{body_html}</table>"
     st.markdown(table_html, unsafe_allow_html=True)
 
+# ------------------------------
+# Plotting Helpers
+# ------------------------------
 NO_DATA_HEIGHT = 0.05
-NO_DATA_PATTERN = dict(shape="/", fgcolor="black", bgcolor="white", size=6)
+NO_DATA_PATTERN = dict(shape="/", fgcolor="gray", bgcolor="lightgray", size=6)
 
 def build_texts_and_colors(colors, area_label, values):
     texts, fonts = [], []
@@ -130,29 +143,33 @@ def plot_single_chart(title, data_values, area_label=None):
     texts, fonts = build_texts_and_colors(color_list, area_label, vals)
 
     fig = go.Figure()
+    # Main bars
     fig.add_trace(go.Bar(
-        x=[pretty[m] for m in metrics], y=has_y,
+        x=[pretty[m] for m in metrics],
+        y=has_y,
         marker_color=color_list,
-        text=texts, texttemplate="%{text}", textposition="inside",
+        text=texts,
+        texttemplate="%{text}",
+        textposition="inside",
         textfont=dict(size=10, color=fonts),
         hovertemplate="%{x}<br>%{text}<extra></extra>",
         showlegend=False
     ))
+    # No data
     fig.add_trace(go.Bar(
-        x=[pretty[m] for m in metrics], y=nodata_y,
-        marker=dict(color="white", pattern=NO_DATA_PATTERN),
+        x=[pretty[m] for m in metrics],
+        y=nodata_y,
+        marker=dict(color="lightgray", pattern=NO_DATA_PATTERN),
         text=["No Data" if pd.isna(v) else "" for v in vals],
-        textposition="outside", textfont=dict(size=10, color="black"),
+        textposition="outside",
+        textfont=dict(size=10, color="black"),
         hovertemplate="%{x}<br>%{text}<extra></extra>",
         name="No Data"
     ))
     fig.update_layout(
         title=title,
-        xaxis=dict(title="Environmental Justice Index Metric",
-            titlefont=dict(color="#222222", size=14)),
-        yaxis=dict(title="Percentile Rank Value",
-            titlefont=dict(color="#222222", size=14),
-            range=[0,1], dtick=0.25),
+        xaxis=dict(title="Environmental Justice Index Metric", titlefont=dict(color="#222", size=14)),
+        yaxis=dict(title="Percentile Rank Value", titlefont=dict(color="#222", size=14), range=[0, 1], dtick=0.25),
         barmode="overlay",
         legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
     )
@@ -164,53 +181,48 @@ def plot_comparison(data1, data2, label1, label2):
     metric_names = [pretty[m] for m in metrics]
     colors1 = [dataset1_rainbows[m] for m in metrics]
     colors2 = [dataset2_rainbows[m] for m in metrics]
+
     has1_y = [v if not pd.isna(v) else 0 for v in vals1]
     nodata1_y = [NO_DATA_HEIGHT if pd.isna(v) else 0 for v in vals1]
     has2_y = [v if not pd.isna(v) else 0 for v in vals2]
     nodata2_y = [NO_DATA_HEIGHT if pd.isna(v) else 0 for v in vals2]
+
     texts1, fonts1 = build_texts_and_colors(colors1, label1, vals1)
     texts2, fonts2 = build_texts_and_colors(colors2, label2, vals2)
 
     fig = go.Figure()
-    fig.add_trace(go.Bar(x=metric_names, y=has1_y, marker_color=colors1,
-                         offsetgroup=0, width=0.35, text=texts1,
-                         texttemplate="%{text}", textposition="inside",
+    fig.add_trace(go.Bar(x=metric_names, y=has1_y, marker_color=colors1, offsetgroup=0, width=0.35,
+                         text=texts1, texttemplate="%{text}", textposition="inside",
                          textfont=dict(size=10, color=fonts1),
-                         hovertemplate="%{x}<br>%{text}<extra></extra>",
-                         showlegend=False))
+                         hovertemplate="%{x}<br>%{text}<extra></extra>", showlegend=False))
     fig.add_trace(go.Bar(x=metric_names, y=nodata1_y,
-                         marker=dict(color="white", pattern=NO_DATA_PATTERN),
+                         marker=dict(color="lightgray", pattern=NO_DATA_PATTERN),
                          offsetgroup=0, width=0.35, showlegend=False))
-    fig.add_trace(go.Bar(x=metric_names, y=has2_y, marker_color=colors2,
-                         offsetgroup=1, width=0.35, text=texts2,
-                         texttemplate="%{text}", textposition="inside",
+    fig.add_trace(go.Bar(x=metric_names, y=has2_y, marker_color=colors2, offsetgroup=1, width=0.35,
+                         text=texts2, texttemplate="%{text}", textposition="inside",
                          textfont=dict(size=10, color=fonts2),
-                         hovertemplate="%{x}<br>%{text}<extra></extra>",
-                         showlegend=False))
+                         hovertemplate="%{x}<br>%{text}<extra></extra>", showlegend=False))
     fig.add_trace(go.Bar(x=metric_names, y=nodata2_y,
-                         marker=dict(color="white", pattern=NO_DATA_PATTERN),
+                         marker=dict(color="lightgray", pattern=NO_DATA_PATTERN),
                          offsetgroup=1, width=0.35, showlegend=False))
     fig.add_trace(go.Bar(x=[None], y=[None],
-                         marker=dict(color="white", pattern=NO_DATA_PATTERN),
+                         marker=dict(color="lightgray", pattern=NO_DATA_PATTERN),
                          name="No Data"))
 
+    # ✅ FIX: Always show data table after chart
     compare_table = pd.DataFrame({
         "Metric": [pretty[m] for m in metrics],
         label1: data1.values,
         label2: data2.values
-    }).set_index("Metric").T
+    })
     st.subheader("📊 Data Comparison Table")
-    display_colored_table_html(compare_table.reset_index(), dataset1_rainbows,
-                               {"index": "Metric", **pretty}, title=None)
+    display_colored_table_html(compare_table, dataset1_rainbows, {"Metric": "Metric", **pretty})
 
     fig.update_layout(
         barmode="group",
         title=f"EJI Metric Comparison — {label1} vs {label2}",
-        xaxis=dict(title="Environmental Justice Index Metric",
-            titlefont=dict(color="#222222", size=14)),
-        yaxis=dict(title="Percentile Rank Value",
-            titlefont=dict(color="#222222", size=14),
-            range=[0,1], dtick=0.25),
+        xaxis=dict(title="Environmental Justice Index Metric", titlefont=dict(color="#222", size=14)),
+        yaxis=dict(title="Percentile Rank Value", titlefont=dict(color="#222", size=14), range=[0, 1], dtick=0.25),
         legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
     )
     st.plotly_chart(fig, use_container_width=True)
