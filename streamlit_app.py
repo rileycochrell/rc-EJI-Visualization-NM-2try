@@ -2,7 +2,9 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
+import numpy as np
 
+# --- PAGE CONFIG ---
 st.set_page_config(
     page_title="Environmental Justice Index (EJI) — New Mexico",
     page_icon="🌎",
@@ -86,7 +88,10 @@ dataset2_rainbows = {
 
 # --- HELPER: CONTRAST COLOR ---
 def get_contrast_color(hex_color):
-    rgb = tuple(int(hex_color.strip("#")[i:i+2], 16) for i in (0, 2, 4))
+    try:
+        rgb = tuple(int(hex_color.strip("#")[i:i+2], 16) for i in (0, 2, 4))
+    except Exception:
+        return "black"
     brightness = (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2])
     return "black" if brightness > 150 else "white"
 
@@ -109,11 +114,23 @@ def display_colored_table_html(df, color_map, pretty_map, title=None):
 
     body_html = ""
     for _, row in df_display.iterrows():
-        highlight = any(float(str(val).replace(",", "").strip()) >= 0.76 for val in row if str(val).replace(".", "", 1).isdigit())
+        # highlight if any numeric cell >= 0.76
+        highlight = False
+        for val in row:
+            try:
+                n = float(str(val).replace(",", "").strip())
+                if n >= 0.76:
+                    highlight = True
+                    break
+            except Exception:
+                if isinstance(val, str) and "very high" in val.lower():
+                    highlight = True
+                    break
+
         row_style = "background-color:#ffb3b3;" if highlight else ""
         body_html += f"<tr style='{row_style}'>"
         for val in row:
-            cell_val = val if not isinstance(val, float) else f"{val:.3f}"
+            cell_val = (f"{val:.3f}" if isinstance(val, float) else val)
             body_html += f"<td style='text-align:center;padding:4px;border:1px solid #ccc'>{cell_val}</td>"
         body_html += "</tr>"
 
@@ -125,26 +142,68 @@ def display_colored_table_html(df, color_map, pretty_map, title=None):
     """
     st.markdown(table_html, unsafe_allow_html=True)
 
-# --- SINGLE PLOT ---
+# --- PLOTTING HELPERS ---
+NO_DATA_HEIGHT = 0.03  # small visible bar for "No Data" (won't be interpreted as real value)
+NO_DATA_COLOR = "#D3D3D3"
+
+def make_contrast_texts(colors, labels, values, area_label=None):
+    """Return list of text strings and list of font colors corresponding to bar colors."""
+    texts = []
+    font_colors = []
+    for c, v in zip(colors, values):
+        contrast = get_contrast_color(c)
+        if pd.isna(v):
+            texts.append("No Data")
+            font_colors.append("black")
+        else:
+            val_str = f"{v:.3f}"
+            if area_label:
+                texts.append(f"{area_label}<br>{val_str}")
+            else:
+                texts.append(val_str)
+            font_colors.append(contrast)
+    return texts, font_colors
+
+# --- SINGLE PLOT (with area label inside bars & no-data visible/striped) ---
 def plot_single_chart(title, data_values, area_label=None):
-    df = pd.DataFrame({
-        "Metric": metrics,
-        "Value": data_values.values
-    })
-    df["DataStatus"] = df["Value"].apply(lambda v: "No Data" if pd.isna(v) else "Has Data")
-    df["Value_display"] = df["Value"].fillna(0)
-    no_data_color = "#D3D3D3"
-    df["Color"] = df.apply(lambda row: dataset1_rainbows[row["Metric"]] if row["DataStatus"] == "Has Data" else no_data_color, axis=1)
+    df = pd.DataFrame({"Metric": metrics, "Value": data_values.values})
+    # map colors per metric
+    colors = [dataset1_rainbows[m] for m in df["Metric"]]
+    # numeric values; keep NaN as NaN
+    values = df["Value"].astype(float).values
+
+    # Build y arrays: has_data_y = actual value or 0; no_data_y = NO_DATA_HEIGHT where missing
+    has_data_y = [v if not pd.isna(v) else 0 for v in values]
+    no_data_y = [NO_DATA_HEIGHT if pd.isna(v) else 0 for v in values]
+
+    # text and font colors (contrast-aware)
+    texts, font_colors = make_contrast_texts(colors, df["Metric"], values, area_label=area_label)
 
     fig = go.Figure()
+
+    # Has-data bars (actual colored bars)
     fig.add_trace(go.Bar(
         x=[pretty[m] for m in df["Metric"]],
-        y=df["Value_display"],
-        marker_color=df["Color"],
-        text=[(f"{area_label}<br>{v:.3f}" if s == "Has Data" else "No Data") for v, s in zip(df["Value_display"], df["DataStatus"])],
+        y=has_data_y,
+        marker_color=colors,
+        name="Has data",
+        text=texts,
         texttemplate="%{text}",
         textposition="inside",
-        textfont=dict(size=10, color="white"),
+        textfont=dict(size=10, color=font_colors),
+        hovertemplate="%{x}<br>%{text}<extra></extra>"
+    ))
+
+    # No-data bars (striped gray, small height so visible)
+    fig.add_trace(go.Bar(
+        x=[pretty[m] for m in df["Metric"]],
+        y=no_data_y,
+        marker=dict(color=NO_DATA_COLOR, pattern=dict(shape="/", fgcolor="black", size=6)),
+        name="No Data",
+        text=[("No Data" if pd.isna(v) else "") for v in values],
+        texttemplate="%{text}",
+        textposition="outside",
+        textfont=dict(size=10, color="black"),
         hovertemplate="%{x}<br>%{text}<extra></extra>"
     ))
 
@@ -152,63 +211,115 @@ def plot_single_chart(title, data_values, area_label=None):
         title=title,
         yaxis=dict(title="Percentile Rank Value", range=[0, 1], dtick=0.25),
         xaxis_title="Environmental Justice Index Metric",
-        showlegend=True,
-        legend=dict(
-            itemsizing="constant",
-            orientation="h",
-            yanchor="bottom",
-            y=-0.2,
-            xanchor="center",
-            x=0.5
-        )
+        barmode="overlay",
+        legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5)
     )
-    # Add legend for "No Data"
-    fig.add_trace(go.Bar(
-        x=[None], y=[None],
-        marker_color=no_data_color,
-        name="No Data"
-    ))
 
     st.plotly_chart(fig, use_container_width=True)
 
-# --- COMPARISON PLOT ---
+# --- COMPARISON PLOT (two datasets) ---
 def plot_comparison(data1, data2, label1, label2, metrics):
+    # data1 and data2 are Series in metric order
+    vals1 = np.array([np.nan if pd.isna(v) else float(v) for v in data1.values])
+    vals2 = np.array([np.nan if pd.isna(v) else float(v) for v in data2.values])
+    metric_names = [pretty[m] for m in metrics]
+
+    # colors per metric for each dataset (use different palettes)
+    colors1 = [dataset1_rainbows[m] for m in metrics]
+    colors2 = [dataset2_rainbows[m] for m in metrics]
+
+    # Prepare has/no-data y arrays (use small visible NO_DATA_HEIGHT for missing)
+    has1_y = [v if not pd.isna(v) else 0 for v in vals1]
+    nodata1_y = [NO_DATA_HEIGHT if pd.isna(v) else 0 for v in vals1]
+
+    has2_y = [v if not pd.isna(v) else 0 for v in vals2]
+    nodata2_y = [NO_DATA_HEIGHT if pd.isna(v) else 0 for v in vals2]
+
+    # texts and font colors
+    texts1, font_colors1 = make_contrast_texts(colors1, metrics, vals1, area_label=label1)
+    texts2, font_colors2 = make_contrast_texts(colors2, metrics, vals2, area_label=label2)
+
     fig = go.Figure()
 
-    for data, label, color_map in [(data1, label1, dataset1_rainbows), (data2, label2, dataset2_rainbows)]:
-        fig.add_trace(go.Bar(
-            x=[pretty[m] for m in metrics],
-            y=list(data.values),
-            name=label,
-            marker_color=[color_map[m] for m in metrics],
-            offsetgroup=0 if label == label1 else 1,
-            width=0.35,
-            text=[f"{label}<br>{v:.3f}" if not pd.isna(v) else "No Data" for v in data.values],
-            texttemplate="%{text}",
-            textposition="inside",
-            textfont=dict(size=10, color="white"),
-            hovertemplate="%{x}<br>%{text}<extra></extra>"
-        ))
+    # Dataset 1 has-data bars
+    fig.add_trace(go.Bar(
+        x=metric_names,
+        y=has1_y,
+        marker_color=colors1,
+        name=label1,
+        offsetgroup=0,
+        width=0.35,
+        text=texts1,
+        texttemplate="%{text}",
+        textposition="inside",
+        textfont=dict(size=10, color=font_colors1),
+        hovertemplate="%{x}<br>%{text}<extra></extra>"
+    ))
+    # Dataset 1 no-data (striped gray)
+    fig.add_trace(go.Bar(
+        x=metric_names,
+        y=nodata1_y,
+        marker=dict(color=NO_DATA_COLOR, pattern=dict(shape="/", fgcolor="black", size=6)),
+        name=f"{label1} — No Data",
+        offsetgroup=0,
+        width=0.35,
+        text=[("No Data" if pd.isna(v) else "") for v in vals1],
+        textposition="outside",
+        textfont=dict(size=10, color="black"),
+        hovertemplate="%{x}<br>%{text}<extra></extra>",
+        showlegend=False  # will add single "No Data" legend entry later
+    ))
+
+    # Dataset 2 has-data bars
+    fig.add_trace(go.Bar(
+        x=metric_names,
+        y=has2_y,
+        marker_color=colors2,
+        name=label2,
+        offsetgroup=1,
+        width=0.35,
+        text=texts2,
+        texttemplate="%{text}",
+        textposition="inside",
+        textfont=dict(size=10, color=font_colors2),
+        hovertemplate="%{x}<br>%{text}<extra></extra>"
+    ))
+    # Dataset 2 no-data (striped gray)
+    fig.add_trace(go.Bar(
+        x=metric_names,
+        y=nodata2_y,
+        marker=dict(color=NO_DATA_COLOR, pattern=dict(shape="/", fgcolor="black", size=6)),
+        name=f"{label2} — No Data",
+        offsetgroup=1,
+        width=0.35,
+        text=[("No Data" if pd.isna(v) else "") for v in vals2],
+        textposition="outside",
+        textfont=dict(size=10, color="black"),
+        hovertemplate="%{x}<br>%{text}<extra></extra>",
+        showlegend=False
+    ))
+
+    # Add single legend entry for No Data (striped)
+    fig.add_trace(go.Bar(x=[None], y=[None], marker=dict(color=NO_DATA_COLOR, pattern=dict(shape="/", fgcolor="black", size=6)), name="No Data"))
 
     fig.update_layout(
         barmode='group',
         title=f"EJI Metric Comparison — {label1} vs {label2}",
         yaxis=dict(title="Percentile Rank Value", range=[0, 1], dtick=0.25),
-        showlegend=True,
-        legend=dict(
-            itemsizing="constant",
-            orientation="h",
-            yanchor="bottom",
-            y=-0.2,
-            xanchor="center",
-            x=0.5
-        )
+        legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5)
     )
 
-    # Add "No Data" legend entry
-    fig.add_trace(go.Bar(x=[None], y=[None], marker_color="#D3D3D3", name="No Data"))
+    # Build and show comparison table (so second data table exists)
+    compare_table = pd.DataFrame({
+        "Metric": [pretty.get(m, m) for m in metrics],
+        label1: data1.values,
+        label2: data2.values
+    }).set_index("Metric").T
+    st.subheader("📊 Data Comparison Table")
+    display_colored_table_html(compare_table.reset_index(), dataset1_rainbows, {"index":"Metric", **pretty}, title=None)
 
     st.plotly_chart(fig, use_container_width=True)
+
 
 # --- MAIN CONTENT ---
 selected_parameter = st.selectbox("View EJI data for:", parameter1)
