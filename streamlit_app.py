@@ -143,7 +143,7 @@ def display_colored_table_html(df, color_map, pretty_map, title=None):
     st.markdown(table_html, unsafe_allow_html=True)
 
 # --- PLOTTING HELPERS ---
-NO_DATA_HEIGHT = 0.03  # small visible bar for "No Data" (won't be interpreted as real value)
+NO_DATA_HEIGHT = 1  # small visible bar for "No Data" (won't be interpreted as real value)
 NO_DATA_COLOR = "#D3D3D3"
 
 def make_contrast_texts(colors, labels, values, area_label=None):
