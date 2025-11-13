@@ -1,6 +1,6 @@
 import streamlit as st
 
-st.set_page_config(page_title="What Goes Into EJI?", layout="wide")
+st.set_page_config(page_title="What Goes Into EJI?", page_icon="🌎", layout="wide")
 
 st.title("🧩 What Goes Into the Environmental Justice Index (EJI)?")
 
