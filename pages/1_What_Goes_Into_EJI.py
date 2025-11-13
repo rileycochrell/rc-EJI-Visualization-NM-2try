@@ -12,4 +12,4 @@ This diagram, developed by the **CDC and ATSDR**, illustrates how these indicato
 and modules to calculate the overall Environmental Justice score.
 """)
 
-st.image("pictures/EJIofficialMarkers.png", use_container_width=True, caption="Source: CDC Environmental Justice Index")
+st.image("pictures/EJIofficialMarkers.png", width='stretch', caption="Source: CDC Environmental Justice Index")
