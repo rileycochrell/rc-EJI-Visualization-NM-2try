@@ -21,8 +21,7 @@ st.markdown('<style>div[data-testid="stSidebarNav"] {display: none;}</style>', u
 # Custom Sidebar Header and Navigation
 # ------------------------------
 with st.sidebar:
-    # Use st.markdown with HTML for precise control over styling and alignment
-    # This replaces the need for the complex stLogoSpacer CSS hack
+    # Use st.sidebar.markdown with HTML for precise control over styling and alignment
     st.markdown(
         """
         <div style="text-align: center; padding-top: 15px; padding-bottom: 15px;">
@@ -33,11 +32,9 @@ with st.sidebar:
         """,
         unsafe_allow_html=True
     )
-    
-    # Add a horizontal rule for visual separation below the header
-    # st.write("---") # Replaced by the <hr> tag in the markdown block for better control
+    # The previous CSS injection block targeting stLogoSpacer has been removed.
 
-    # Custom manual navigation
+    # Custom manual navigation below the header
     st.page_link("streamlit_app.py",
                  label="EJI Visualization",
                  icon="📊")
