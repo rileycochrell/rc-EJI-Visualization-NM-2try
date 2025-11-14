@@ -16,10 +16,8 @@ st.set_page_config(
 # Hide Streamlit's Auto Navigation and Add Custom Title in Logo Spot
 # ------------------------------
 
-# 1. Hide the default navigation menu
 st.markdown('<style>div[data-testid="stSidebarNav"] {display: none;}</style>', unsafe_allow_html=True)
 
-# 2. Add custom CSS to inject the text into the logo spacer area
 st.markdown(
     """
 <style>
@@ -32,6 +30,7 @@ div[data-testid="stLogoSpacer"]::before {
     display: flex;
     align-items: center;
     padding-left: 10px; /* Add some padding for alignment */
+    padding-top: 10px;
     height: 100%;
     /* Ensure no logo image is displayed if it was implicitly added */
     background-image: none !important;
