@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-from st_theme import st_theme
+from streamlit_theme import st_theme
 
 # ------------------------------
 # Page Config
@@ -28,6 +28,7 @@ div[data-testid="stLogoSpacer"] {
     height: 100%;
     padding-top: 40px;
 }
+
 div[data-testid="stLogoSpacer"]::before {
     content: "TEAM 23:";
     font-size: 30px;
@@ -35,6 +36,7 @@ div[data-testid="stLogoSpacer"]::before {
     white-space: nowrap;
     margin-bottom: 5px;
 }
+
 div[data-testid="stLogoSpacer"]::after {
     content: "🌎 Environmental Justice in New Mexico";
     text-align: center;
@@ -128,13 +130,13 @@ def get_contrast_color(hex_color):
     return "black" if brightness > 150 else "white"
 
 # ------------------------------
-# Theme-aware "No Data" font
+# Theme-aware font color for "No Data"
 # ------------------------------
-def get_theme_font_color():
+def get_current_theme_color():
     theme_info = st_theme()
-    if theme_info and theme_info.get("base") == "dark":
-        return "#FAFAFA"  # white for dark theme
-    return "#31333F"      # dark for light theme
+    if theme_info and theme_info.get('base', '').lower() == 'dark':
+        return "white"
+    return "black"
 
 # ------------------------------
 # Table Display
@@ -161,7 +163,7 @@ def display_colored_table_html(df, color_map, pretty_map, title=None):
         body_html += f"<tr style='{row_style}'>"
         for val in row:
             cell_text = "No Data" if pd.isna(val) else (f"{val:.3f}" if isinstance(val, float) else val)
-            body_html += f"<td style='text-align:center;padding:4px;border:1px solid #ccc;color:{get_theme_font_color() if pd.isna(val) else 'inherit'}'>{cell_text}</td>"
+            body_html += f"<td style='text-align:center;padding:4px;border:1px solid #ccc'>{cell_text}</td>"
         body_html += "</tr>"
 
     table_html = f"<table style='border-collapse:collapse;width:100%;border:1px solid black;'>{header_html}{body_html}</table>"
@@ -184,10 +186,11 @@ def build_customdata(area_label, values):
 
 def build_texts_and_colors(colors, area_label, values):
     texts, fonts = [], []
+    nodata_color = get_current_theme_color()
     for c, v in zip(colors, values):
         if pd.isna(v):
             texts.append("No Data")
-            fonts.append(get_theme_font_color())
+            fonts.append(nodata_color)
         else:
             val_str = f"{v:.3f}"
             texts.append(f"{area_label}<br>{val_str}" if area_label else f"{val_str}")
@@ -203,8 +206,6 @@ def plot_single_chart(title, data_values, area_label=None):
     customdata = build_customdata(area_label, vals)
 
     fig = go.Figure()
-
-    # Real data bars
     fig.add_trace(go.Bar(
         x=[pretty[m] for m in metrics],
         y=has_y,
@@ -218,14 +219,13 @@ def plot_single_chart(title, data_values, area_label=None):
         showlegend=False
     ))
 
-    # No data bars with dynamic theme font
     fig.add_trace(go.Bar(
         x=[pretty[m] for m in metrics],
         y=nodata_y,
         marker=dict(color="white", pattern=NO_DATA_PATTERN),
         text=[f"{area_label}<br>No Data" if pd.isna(v) else "" for v in vals],
         textposition="outside",
-        textfont=dict(size=10, color=get_theme_font_color()),
+        textfont=dict(size=10, color=get_current_theme_color()),
         customdata=customdata,
         hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
         name="No Data"
@@ -238,7 +238,8 @@ def plot_single_chart(title, data_values, area_label=None):
         barmode="overlay",
         legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
     )
-    st.plotly_chart(fig, width="stretch")
+    st.plotly_chart(fig, use_container_width=True)
+
 
 
 def plot_comparison(data1, data2, label1, label2):
@@ -266,7 +267,7 @@ def plot_comparison(data1, data2, label1, label2):
     fig.add_trace(go.Bar(x=metric_names, y=nodata1_y, marker=dict(color="white", pattern=NO_DATA_PATTERN),
                          offsetgroup=0, width=0.35,
                          text=[f"{label1}<br>No Data" if pd.isna(v) else "" for v in vals1],
-                         textposition="outside", textfont=dict(size=10, color=get_theme_font_color()),
+                         textposition="outside", textfont=dict(size=10, color=get_current_theme_color()),
                          customdata=custom1, hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
                          showlegend=False))
     # Dataset 2
@@ -278,7 +279,7 @@ def plot_comparison(data1, data2, label1, label2):
     fig.add_trace(go.Bar(x=metric_names, y=nodata2_y, marker=dict(color="white", pattern=NO_DATA_PATTERN),
                          offsetgroup=1, width=0.35,
                          text=[f"{label2}<br>No Data" if pd.isna(v) else "" for v in vals2],
-                         textposition="outside", textfont=dict(size=10, color=get_theme_font_color()),
+                         textposition="outside", textfont=dict(size=10, color=get_current_theme_color()),
                          customdata=custom2, hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
                          showlegend=False))
     fig.add_trace(go.Bar(x=[None], y=[None], marker=dict(color="white", pattern=NO_DATA_PATTERN), name="No Data"))
