@@ -28,7 +28,7 @@ div[data-testid="stLogoSpacer"] {
     justify-content: center; /* Center vertically */
     align-items: center; /* Center horizontally */
     height: 100%;
-    padding-top: 20px; /* Add some padding to move it down slightly */
+    padding-top: 40px; /* Add some padding to move it down slightly */
 }
 
 /* ::before for the top line (TEAM 23:) */
