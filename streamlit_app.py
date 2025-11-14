@@ -22,8 +22,6 @@ st.sidebar.header("🌎 Environmental Justice in New Mexico")
 # Custom Sidebar
 # ------------------------------
 with st.sidebar:
-    # Title at very top
-    st.markdown("## 🌎 Environmental Justice in New Mexico")
     st.write("---")
 
     # Custom manual navigation
