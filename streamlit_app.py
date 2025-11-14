@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
+from st_theme import st_theme
 
 # ------------------------------
 # Page Config
@@ -27,7 +28,6 @@ div[data-testid="stLogoSpacer"] {
     height: 100%;
     padding-top: 40px;
 }
-
 div[data-testid="stLogoSpacer"]::before {
     content: "TEAM 23:";
     font-size: 30px;
@@ -35,7 +35,6 @@ div[data-testid="stLogoSpacer"]::before {
     white-space: nowrap;
     margin-bottom: 5px;
 }
-
 div[data-testid="stLogoSpacer"]::after {
     content: "🌎 Environmental Justice in New Mexico";
     text-align: center;
@@ -131,29 +130,11 @@ def get_contrast_color(hex_color):
 # ------------------------------
 # Theme-aware "No Data" font
 # ------------------------------
-if "theme" not in st.session_state:
-    st.session_state.theme = "light"
-
-# JavaScript to detect Streamlit theme
-st.markdown(
-    """
-<script>
-const updateTheme = () => {
-    const bg = getComputedStyle(document.body).getPropertyValue('--background-color') || '';
-    if (bg.includes('0, 0, 0')) {
-        window.parent.postMessage({func: 'setTheme', theme: 'dark'}, '*');
-    } else {
-        window.parent.postMessage({func: 'setTheme', theme: 'light'}, '*');
-    }
-};
-setInterval(updateTheme, 1000);
-</script>
-""",
-    unsafe_allow_html=True
-)
-
-def get_theme_color():
-    return "white" if st.session_state.theme == "dark" else "black"
+def get_theme_font_color():
+    theme_info = st_theme()
+    if theme_info and theme_info.get("base") == "dark":
+        return "#FAFAFA"  # white for dark theme
+    return "#31333F"      # dark for light theme
 
 # ------------------------------
 # Table Display
@@ -180,7 +161,7 @@ def display_colored_table_html(df, color_map, pretty_map, title=None):
         body_html += f"<tr style='{row_style}'>"
         for val in row:
             cell_text = "No Data" if pd.isna(val) else (f"{val:.3f}" if isinstance(val, float) else val)
-            body_html += f"<td style='text-align:center;padding:4px;border:1px solid #ccc'>{cell_text}</td>"
+            body_html += f"<td style='text-align:center;padding:4px;border:1px solid #ccc;color:{get_theme_font_color() if pd.isna(val) else 'inherit'}'>{cell_text}</td>"
         body_html += "</tr>"
 
     table_html = f"<table style='border-collapse:collapse;width:100%;border:1px solid black;'>{header_html}{body_html}</table>"
@@ -206,7 +187,7 @@ def build_texts_and_colors(colors, area_label, values):
     for c, v in zip(colors, values):
         if pd.isna(v):
             texts.append("No Data")
-            fonts.append(get_theme_color())
+            fonts.append(get_theme_font_color())
         else:
             val_str = f"{v:.3f}"
             texts.append(f"{area_label}<br>{val_str}" if area_label else f"{val_str}")
@@ -223,6 +204,7 @@ def plot_single_chart(title, data_values, area_label=None):
 
     fig = go.Figure()
 
+    # Real data bars
     fig.add_trace(go.Bar(
         x=[pretty[m] for m in metrics],
         y=has_y,
@@ -236,13 +218,14 @@ def plot_single_chart(title, data_values, area_label=None):
         showlegend=False
     ))
 
+    # No data bars with dynamic theme font
     fig.add_trace(go.Bar(
         x=[pretty[m] for m in metrics],
         y=nodata_y,
         marker=dict(color="white", pattern=NO_DATA_PATTERN),
         text=[f"{area_label}<br>No Data" if pd.isna(v) else "" for v in vals],
         textposition="outside",
-        textfont=dict(size=10, color=get_theme_color()),
+        textfont=dict(size=10, color=get_theme_font_color()),
         customdata=customdata,
         hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
         name="No Data"
@@ -256,6 +239,7 @@ def plot_single_chart(title, data_values, area_label=None):
         legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
     )
     st.plotly_chart(fig, width="stretch")
+
 
 def plot_comparison(data1, data2, label1, label2):
     vals1 = np.array([np.nan if pd.isna(v) else float(v) for v in data1.values])
@@ -282,7 +266,7 @@ def plot_comparison(data1, data2, label1, label2):
     fig.add_trace(go.Bar(x=metric_names, y=nodata1_y, marker=dict(color="white", pattern=NO_DATA_PATTERN),
                          offsetgroup=0, width=0.35,
                          text=[f"{label1}<br>No Data" if pd.isna(v) else "" for v in vals1],
-                         textposition="outside", textfont=dict(size=10, color=get_theme_color()),
+                         textposition="outside", textfont=dict(size=10, color=get_theme_font_color()),
                          customdata=custom1, hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
                          showlegend=False))
     # Dataset 2
@@ -294,7 +278,7 @@ def plot_comparison(data1, data2, label1, label2):
     fig.add_trace(go.Bar(x=metric_names, y=nodata2_y, marker=dict(color="white", pattern=NO_DATA_PATTERN),
                          offsetgroup=1, width=0.35,
                          text=[f"{label2}<br>No Data" if pd.isna(v) else "" for v in vals2],
-                         textposition="outside", textfont=dict(size=10, color=get_theme_color()),
+                         textposition="outside", textfont=dict(size=10, color=get_theme_font_color()),
                          customdata=custom2, hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
                          showlegend=False))
     fig.add_trace(go.Bar(x=[None], y=[None], marker=dict(color="white", pattern=NO_DATA_PATTERN), name="No Data"))
@@ -321,15 +305,12 @@ def plot_comparison(data1, data2, label1, label2):
 # Main App Layout
 # ------------------------------
 st.title("📊 Environmental Justice Index Visualization (New Mexico)")
-st.info("""
-**Interpreting the EJI Score:**  
-Lower EJI values (closer to 0) indicate *lower cumulative environmental and social burdens* — generally a good outcome.  
-Higher EJI values (closer to 1) indicate *higher cumulative burdens and vulnerabilities* — generally a worse outcome.
+st.info("""**Interpreting the EJI Score:**  
+Lower EJI values (closer to 0) indicate *lower cumulative environmental and social burdens*.  
+Higher EJI values (closer to 1) indicate *higher cumulative burdens and vulnerabilities*.
 """)
 st.write("Use the dropdowns below to explore data for **New Mexico** or specific **counties**.")
 st.info("🔴 Rows highlighted in red represent areas with **Very High Concern/Burden (EJI ≥ 0.76)**.")
-
-selected_parameter = st.selectbox("View EJI data for:", parameter1)
 
 if selected_parameter == "County":
     selected_county = st.selectbox("Select a New Mexico County:", counties)
