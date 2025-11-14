@@ -230,19 +230,19 @@ def plot_single_chart(title, data_values, area_label=None):
     ))
 
     # No data overlay
-nodata_text = build_nodata_text(area_label, vals)
-
-fig.add_trace(go.Bar(
-    x=[pretty[m] for m in metrics],
-    y=nodata_y,
-    marker=dict(color="white", pattern=NO_DATA_PATTERN),
-    text=nodata_text,
-    texttemplate="%{text}",
-    textposition="outside",
-
-    # OPTION A — auto text color based on background (uses your helper)
-    textfont=dict(size=10, color=[get_contrast_color("white")]*len(vals)),
+    nodata_text = build_nodata_text(area_label, vals)
     
+    fig.add_trace(go.Bar(
+        x=[pretty[m] for m in metrics],
+        y=nodata_y,
+        marker=dict(color="white", pattern=NO_DATA_PATTERN),
+        text=nodata_text,
+        texttemplate="%{text}",
+        textposition="outside",
+    
+        # OPTION A — auto text color based on background (uses your helper)
+        textfont=dict(size=10, color=[get_contrast_color("white")]*len(vals)),
+        
         customdata=customdata,
         hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
         name="No Data"
