@@ -13,44 +13,28 @@ st.set_page_config(
 )
 
 # ------------------------------
-# Hide Streamlit's Auto Navigation and Add Custom Title in Logo Spot
+# Hide Streamlit's Auto Navigation
 # ------------------------------
-
 st.markdown('<style>div[data-testid="stSidebarNav"] {display: none;}</style>', unsafe_allow_html=True)
 
-st.markdown(
-    """
-<style>
-/* Target the logo spacer div and inject text using the ::before pseudo-element */
-div[data-testid="stLogoSpacer"]::before {
-    content: "🌎Environmental Justice in New Mexico";
-    font-size: 20px; /* Adjust font size as needed */
-    font-weight: bold;
-    color: inherit; /* Use the default sidebar text color */
-    display: flex;
-    align-items: center;
-    padding-left: 10px; /* Add some padding for alignment */
-    padding-top: 50px;
-    height: 100%;
-    /* Ensure no logo image is displayed if it was implicitly added */
-    background-image: none !important;
-}
-</style>
-""",
-    unsafe_allow_html=True,
-)
-
-# 3. Remove the previous st.logo() and st.sidebar.header()
-# st.logo(icon_image="🌎", image=None) # REMOVED
-# st.sidebar.header("🌎 Environmental Justice in New Mexico") # REMOVED
-
 # ------------------------------
-# Custom Sidebar
+# Custom Sidebar Header and Navigation
 # ------------------------------
 with st.sidebar:
-    st.write("---")
+    # Use st.sidebar.markdown with HTML for precise control over styling and alignment
+    st.markdown(
+        """
+        <div style="text-align: center; padding-top: 15px; padding-bottom: 15px;">
+            <div style="font-size: 20px; font-weight: bold; margin-bottom: 5px;">TEAM 23:</div>
+            <div style="font-size: 16px; white-space: nowrap;">🌎 Environmental Justice in New Mexico</div>
+        </div>
+        <hr style="border: none; border-bottom: 1px solid rgba(49, 51, 63, 0.2);">
+        """,
+        unsafe_allow_html=True
+    )
+    # The previous CSS injection block targeting stLogoSpacer has been removed.
 
-    # Custom manual navigation
+    # Custom manual navigation below the header
     st.page_link("streamlit_app.py",
                  label="EJI Visualization",
                  icon="📊")
