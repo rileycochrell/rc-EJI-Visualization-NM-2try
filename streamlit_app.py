@@ -71,7 +71,7 @@ with st.sidebar:
                  icon="🧩")
 
     st.page_link("pages/2_EJI_Scale_and_Categories.py",
-                 label="Understanding the EJI Scale",
+                 label="What Does the EJI Mean?",
                  icon="🌡️")
 # ------------------------------
 # Load Data
