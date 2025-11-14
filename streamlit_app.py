@@ -183,26 +183,44 @@ def plot_comparison(data1, data2, label1, label2):
     nodata2_y = [NO_DATA_HEIGHT if pd.isna(v) else 0 for v in vals2]
     texts1, fonts1 = build_texts_and_colors(colors1, label1, vals1)
     texts2, fonts2 = build_texts_and_colors(colors2, label2, vals2)
-
+    wingardium_leviOsa = [
+        "No Data" if pd.isna(v) else f"{v:.2f}"
+        for v in vals1
+    wingardium_leviosAH = [
+        "No Data" if pd.isna(v) else f"{v:.2f}"
+        for v in vals2
     fig = go.Figure()
+    # Data1 real
     fig.add_trace(go.Bar(x=metric_names, y=has1_y, marker_color=colors1,
                          offsetgroup=0, width=0.35, text=texts1,
                          texttemplate="%{text}", textposition="inside",
                          textfont=dict(size=10, color=fonts1),
-                         hovertemplate="%{x}<br>%{text}<extra></extra>",
+                         customdata=wingardium_leviOsa,
+                         hovertemplate="%{x}<br>%{customdata}<extra></extra>",
                          showlegend=False))
+    # Data1 no bar
     fig.add_trace(go.Bar(x=metric_names, y=nodata1_y,
                          marker=dict(color="white", pattern=NO_DATA_PATTERN),
-                         offsetgroup=0, width=0.35, showlegend=False))
+                         offsetgroup=0, width=0.35,
+                         customdata=wingardium_leviOsa,
+                         hovertemplate="%{x}<br>%{customdata}<extra></extra>",
+                         showlegend=False))
+    # Data2 real
     fig.add_trace(go.Bar(x=metric_names, y=has2_y, marker_color=colors2,
                          offsetgroup=1, width=0.35, text=texts2,
                          texttemplate="%{text}", textposition="inside",
                          textfont=dict(size=10, color=fonts2),
-                         hovertemplate="%{x}<br>%{text}<extra></extra>",
+                         customdata=wingardium_leviosAH,
+                         hovertemplate="%{x}<br>%{customdata}<extra></extra>",
                          showlegend=False))
+    # Data2 no bar
     fig.add_trace(go.Bar(x=metric_names, y=nodata2_y,
                          marker=dict(color="white", pattern=NO_DATA_PATTERN),
                          offsetgroup=1, width=0.35, showlegend=False))
+                         customdata=wingardium_leviosAH,
+                         hovertemplate="%{x}<br>%{customdata}<extra></extra>",
+                         showlegend=False))
+    # Legend
     fig.add_trace(go.Bar(x=[None], y=[None],
                          marker=dict(color="white", pattern=NO_DATA_PATTERN),
                          name="No Data"))
