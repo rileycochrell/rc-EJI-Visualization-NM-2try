@@ -15,64 +15,55 @@ st.set_page_config(
 # ------------------------------
 # Hide Streamlit's Auto Navigation and Add Custom Title in Logo Spot
 # ------------------------------
-
 st.markdown('<style>div[data-testid="stSidebarNav"] {display: none;}</style>', unsafe_allow_html=True)
 
+# Small tweak so the custom logo area doesn't create a large empty gap
 st.markdown(
     """
 <style>
 /* Target the logo spacer div container */
 div[data-testid="stLogoSpacer"] {
     display: flex;
-    flex-direction: column; /* Stack the before and after elements vertically */
-    justify-content: center; /* Center vertically */
-    align-items: center; /* Center horizontally */
-    height: 100%;
-    padding-top: 40px; /* Add some padding to move it down slightly */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 72px;          /* reduce big gap */
+    padding-top: 6px;      /* small pushdown */
+    padding-bottom: 0px;
+    margin-bottom: 0px;
 }
 
 /* ::before for the top line (TEAM 23:) */
 div[data-testid="stLogoSpacer"]::before {
     content: "TEAM 23:";
-    font-size: 30px; /* Larger font size */
-    font-weight: bold;
+    font-size: 16px;
+    font-weight: 700;
     white-space: nowrap;
-    margin-bottom: 5px; /* Space between lines */
+    margin-bottom: 2px;
 }
 
 /* ::after for the bottom line (🌎 Environmental Justice in New Mexico) */
 div[data-testid="stLogoSpacer"]::after {
     content: "🌎 Environmental Justice in New Mexico";
     text-align: center;
-    font-size: 18px; /* Smaller font size */
-    font-weight: bold;
-    margin-bottom: -40px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 0px;
 }
-
 </style>
 """,
     unsafe_allow_html=True,
 )
 
 # ------------------------------
-# Custom Sidebar
+# Custom Sidebar (manual links)
 # ------------------------------
 with st.sidebar:
-    # Add a horizontal rule for visual separation below the logo spot
-    st.write("---") 
+    st.write("---")
+    st.page_link("streamlit_app.py", label="EJI Visualization", icon="📊")
+    st.page_link("pages/1_What_Goes_Into_EJI.py", label="What Goes Into the EJI?", icon="🧩")
+    st.page_link("pages/2_EJI_Scale_and_Categories.py", label="What Does the EJI Mean?", icon="🌡️")
 
-    # Custom manual navigation
-    st.page_link("streamlit_app.py",
-                 label="EJI Visualization",
-                 icon="📊")
-
-    st.page_link("pages/1_What_Goes_Into_EJI.py",
-                 label="What Goes Into the EJI?",
-                 icon="🧩")
-
-    st.page_link("pages/2_EJI_Scale_and_Categories.py",
-                 label="What Does the EJI Mean?",
-                 icon="🌡️")
 # ------------------------------
 # Load Data
 # ------------------------------
@@ -90,6 +81,7 @@ except Exception as e:
     st.error(f"Error loading data: {e}")
     st.stop()
 
+# rename columns if needed
 rename_map = {
     "Mean_EJI": "RPL_EJI",
     "Mean_EBM": "RPL_EBM",
@@ -101,6 +93,7 @@ rename_map = {
 state_df.rename(columns=rename_map, inplace=True)
 county_df.rename(columns=rename_map, inplace=True)
 
+# core lists & maps
 metrics = ["RPL_EJI", "RPL_EBM", "RPL_SVM", "RPL_HVM", "RPL_CBM", "RPL_EJI_CBM"]
 counties = sorted(county_df["County"].dropna().unique())
 states = sorted(state_df["State"].dropna().unique())
@@ -169,6 +162,7 @@ def display_colored_table_html(df, color_map, pretty_map, title=None):
     table_html = f"<table style='border-collapse:collapse;width:100%;border:1px solid black;'>{header_html}{body_html}</table>"
     st.markdown(table_html, unsafe_allow_html=True)
 
+# small visible no-data bar & striped pattern
 NO_DATA_HEIGHT = 0.5
 NO_DATA_PATTERN = dict(shape="/", fgcolor="black", bgcolor="white", size=6)
 
@@ -194,37 +188,51 @@ def plot_single_chart(title, data_values, area_label=None):
     nodata_y = [NO_DATA_HEIGHT if pd.isna(v) else 0 for v in vals]
     texts, fonts = build_texts_and_colors(color_list, area_label, vals)
 
-    wingardium_leviOsa = [
-        "No Data" if pd.isna(v) else f"{v:.2f}"
-        for v in vals
+    # hover shows: MetricName (no label text), Area, Value (or No Data)
+    hover_custom = [
+        [
+            pretty[m],
+            (area_label if not pd.isna(area_label) else ""),
+            ("No Data" if pd.isna(v) else f"{v:.3f}")
+        ]
+        for m, v in zip(metrics, vals)
     ]
+
     fig = go.Figure()
     fig.add_trace(go.Bar(
-        x=[pretty[m] for m in metrics], y=has_y,
+        x=[pretty[m] for m in metrics],
+        y=has_y,
         marker_color=color_list,
-        text=texts, texttemplate="%{text}", textposition="inside",
+        text=texts,
+        texttemplate="%{text}",
+        textposition="inside",
         textfont=dict(size=10, color=fonts),
-        customdata=wingardium_leviOsa,
-        hovertemplate="%{x}<br>%{customdata}<extra></extra>",
+        customdata=hover_custom,
+        hovertemplate="%{customdata[0]}<br>%{customdata[1]}<br>%{customdata[2]}<extra></extra>",
         showlegend=False
     ))
+
     fig.add_trace(go.Bar(
-        x=[pretty[m] for m in metrics], y=nodata_y,
+        x=[pretty[m] for m in metrics],
+        y=nodata_y,
         marker=dict(color="white", pattern=NO_DATA_PATTERN),
         text=["No Data" if pd.isna(v) else "" for v in vals],
-        textposition="outside", textfont=dict(size=10, color="black"),
-        customdata=wingardium_leviOsa,
-        hovertemplate="%{x}<br>%{customdata}<extra></extra>",
-        name="No Data"
+        textposition="outside",
+        textfont=dict(size=10, color="black"),
+        customdata=hover_custom,
+        hovertemplate="%{customdata[0]}<br>%{customdata[1]}<br>%{customdata[2]}<extra></extra>",
+        name="No Data",
+        showlegend=True
     ))
+
     fig.update_layout(
         title=title,
-        yaxis=dict(title="Percentile Rank Value", range=[0, 1], dtick=0.25),
-        xaxis_title="Environmental Justice Index Metric",
+        yaxis=dict(title=dict(text="Percentile Rank Value", font=dict(color="#222")) , range=[0, 1], dtick=0.25),
+        xaxis=dict(title=dict(text="Environmental Justice Index Metric", font=dict(color="#222"))),
         barmode="overlay",
         legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
     )
-    st.plotly_chart(fig, width='stretch')
+    st.plotly_chart(fig, use_container_width=True)
 
 def plot_comparison(data1, data2, label1, label2):
     vals1 = np.array([np.nan if pd.isna(v) else float(v) for v in data1.values])
@@ -238,68 +246,73 @@ def plot_comparison(data1, data2, label1, label2):
     nodata2_y = [NO_DATA_HEIGHT if pd.isna(v) else 0 for v in vals2]
     texts1, fonts1 = build_texts_and_colors(colors1, label1, vals1)
     texts2, fonts2 = build_texts_and_colors(colors2, label2, vals2)
-    wingardium_leviOsa = [
-        "No Data" if pd.isna(v) else f"{v:.2f}"
-        for v in vals1 ]
-    wingardium_leviosAH = [
-        "No Data" if pd.isna(v) else f"{v:.2f}"
-        for v in vals2 ]
+
+    hover1 = [[metric_names[i], label1, ("No Data" if pd.isna(vals1[i]) else f"{vals1[i]:.3f}")] for i in range(len(metrics))]
+    hover2 = [[metric_names[i], label2, ("No Data" if pd.isna(vals2[i]) else f"{vals2[i]:.3f}")] for i in range(len(metrics))]
+
     fig = go.Figure()
     # Data1 real
-    fig.add_trace(go.Bar(x=metric_names, y=has1_y, marker_color=colors1,
-                         offsetgroup=0, width=0.35, text=texts1,
-                         texttemplate="%{text}", textposition="inside",
-                         textfont=dict(size=10, color=fonts1),
-                         customdata=wingardium_leviOsa,
-                         hovertemplate="%{x}<br>%{customdata}<extra></extra>",
-                         showlegend=False))
-    # Data1 no bar
-    fig.add_trace(go.Bar(x=metric_names, y=nodata1_y,
-                         marker=dict(color="white", pattern=NO_DATA_PATTERN),
-                         offsetgroup=0, width=0.35,
-                         customdata=wingardium_leviOsa,
-                         hovertemplate="%{x}<br>%{customdata}<extra></extra>",
-                         showlegend=False))
-    # Data2 real
-    fig.add_trace(go.Bar(x=metric_names, y=has2_y, marker_color=colors2,
-                         offsetgroup=1, width=0.35, text=texts2,
-                         texttemplate="%{text}", textposition="inside",
-                         textfont=dict(size=10, color=fonts2),
-                         customdata=wingardium_leviosAH,
-                         hovertemplate="%{x}<br>%{customdata}<extra></extra>",
-                         showlegend=False))
-        # Data2 no bar
     fig.add_trace(go.Bar(
-        x=metric_names,
-        y=nodata2_y,
-        marker=dict(color="white", pattern=NO_DATA_PATTERN),
-        offsetgroup=1,
-        width=0.35,
-        customdata=wingardium_leviosAH,
-        hovertemplate="%{x}<br>%{customdata}<extra></extra>",
+        x=metric_names, y=has1_y, marker_color=colors1,
+        offsetgroup=0, width=0.35, text=texts1,
+        texttemplate="%{text}", textposition="inside",
+        textfont=dict(size=10, color=fonts1),
+        customdata=hover1,
+        hovertemplate="%{customdata[0]}<br>%{customdata[1]}<br>%{customdata[2]}<extra></extra>",
         showlegend=False
     ))
-    # Legend
-    fig.add_trace(go.Bar(x=[None], y=[None],
-                         marker=dict(color="white", pattern=NO_DATA_PATTERN),
-                         name="No Data"))
+    # Data1 no-data (striped)
+    fig.add_trace(go.Bar(
+        x=metric_names, y=nodata1_y,
+        marker=dict(color="white", pattern=NO_DATA_PATTERN),
+        offsetgroup=0, width=0.35,
+        customdata=hover1,
+        hovertemplate="%{customdata[0]}<br>%{customdata[1]}<br>%{customdata[2]}<extra></extra>",
+        showlegend=False
+    ))
+    # Data2 real
+    fig.add_trace(go.Bar(
+        x=metric_names, y=has2_y, marker_color=colors2,
+        offsetgroup=1, width=0.35, text=texts2,
+        texttemplate="%{text}", textposition="inside",
+        textfont=dict(size=10, color=fonts2),
+        customdata=hover2,
+        hovertemplate="%{customdata[0]}<br>%{customdata[1]}<br>%{customdata[2]}<extra></extra>",
+        showlegend=False
+    ))
+    # Data2 no-data (striped)
+    fig.add_trace(go.Bar(
+        x=metric_names, y=nodata2_y,
+        marker=dict(color="white", pattern=NO_DATA_PATTERN),
+        offsetgroup=1, width=0.35,
+        customdata=hover2,
+        hovertemplate="%{customdata[0]}<br>%{customdata[1]}<br>%{customdata[2]}<extra></extra>",
+        showlegend=False
+    ))
+    # Single legend entry for No Data
+    fig.add_trace(go.Bar(
+        x=[None], y=[None],
+        marker=dict(color="white", pattern=NO_DATA_PATTERN),
+        name="No Data"
+    ))
 
+    # Comparison table (keeps the table shown above/near chart)
     compare_table = pd.DataFrame({
         "Metric": [pretty[m] for m in metrics],
         label1: data1.values,
         label2: data2.values
-    }).set_index("Metric").T
+    })
     st.subheader("⚖️ Data Comparison Table")
-    display_colored_table_html(compare_table.reset_index(), dataset1_rainbows,
-                               {"index": "Metric", **pretty}, title=None)
+    display_colored_table_html(compare_table, dataset1_rainbows, {"Metric": "Metric", **pretty}, title=None)
 
     fig.update_layout(
         barmode="group",
         title=f"EJI Metric Comparison — {label1} vs {label2}",
-        yaxis=dict(title="Percentile Rank Value", range=[0, 1], dtick=0.25),
+        yaxis=dict(title=dict(text="Percentile Rank Value", font=dict(color="#222")), range=[0, 1], dtick=0.25),
+        xaxis=dict(title=dict(text="Environmental Justice Index Metric", font=dict(color="#222"))),
         legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
     )
-    st.plotly_chart(fig, width='stretch')
+    st.plotly_chart(fig, use_container_width=True)
     st.caption("_Note: darker bars represent the first dataset; lighter bars represent the second dataset._")
 
 # ------------------------------
