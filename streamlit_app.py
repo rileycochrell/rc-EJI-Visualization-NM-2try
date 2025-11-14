@@ -45,6 +45,7 @@ div[data-testid="stLogoSpacer"]::after {
     content: "🌎 Environmental Justice in New Mexico";
     text-align: center;
     font-size: 20px; /* Smaller font size */
+    font-weight: bold;
 }
 
 </style>
