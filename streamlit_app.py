@@ -13,11 +13,37 @@ st.set_page_config(
 )
 
 # ------------------------------
-# Hide Streamlit's Auto Navigation
+# Hide Streamlit's Auto Navigation and Add Custom Title in Logo Spot
 # ------------------------------
+
+# 1. Hide the default navigation menu
 st.markdown('<style>div[data-testid="stSidebarNav"] {display: none;}</style>', unsafe_allow_html=True)
-st.logo(icon_image="🌎", image=None)
-st.sidebar.header("🌎 Environmental Justice in New Mexico")
+
+# 2. Add custom CSS to inject the text into the logo spacer area
+st.markdown(
+    """
+<style>
+/* Target the logo spacer div and inject text using the ::before pseudo-element */
+div[data-testid="stLogoSpacer"]::before {
+    content: "Environmental Justice in New Mexico";
+    font-size: 18px; /* Adjust font size as needed */
+    font-weight: bold;
+    color: inherit; /* Use the default sidebar text color */
+    display: flex;
+    align-items: center;
+    padding-left: 10px; /* Add some padding for alignment */
+    height: 100%;
+    /* Ensure no logo image is displayed if it was implicitly added */
+    background-image: none !important;
+}
+</style>
+""",
+    unsafe_allow_html=True,
+)
+
+# 3. Remove the previous st.logo() and st.sidebar.header()
+# st.logo(icon_image="🌎", image=None) # REMOVED
+# st.sidebar.header("🌎 Environmental Justice in New Mexico") # REMOVED
 
 # ------------------------------
 # Custom Sidebar
@@ -26,16 +52,16 @@ with st.sidebar:
     st.write("---")
 
     # Custom manual navigation
-    st.page_link("streamlit_app.py", 
-                 label="EJI Visualization", 
+    st.page_link("streamlit_app.py",
+                 label="EJI Visualization",
                  icon="📊")
 
-    st.page_link("pages/1_What_Goes_Into_EJI.py", 
-                 label="What Goes Into the EJI?", 
+    st.page_link("pages/1_What_Goes_Into_EJI.py",
+                 label="What Goes Into the EJI?",
                  icon="🧩")
 
-    st.page_link("pages/2_EJI_Scale_and_Categories.py", 
-                 label="Understanding the EJI Scale", 
+    st.page_link("pages/2_EJI_Scale_and_Categories.py",
+                 label="Understanding the EJI Scale",
                  icon="🌡️")
 
 # ------------------------------
