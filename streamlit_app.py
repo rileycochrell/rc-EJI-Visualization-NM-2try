@@ -19,6 +19,12 @@ st.markdown("""
     <style>
         /* Hide built-in 'pages/' navigation entirely */
         div[data-testid="stSidebarNav"] {display: none;}
+        section[data-testid="stSidebar"] > div:first-child {
+            padding-top: 0px !important;
+            margin-top: 0px !important; }
+        section[data-testid="stSidebar"] div[role="list"] {
+            margin-top: 0px !important;
+            padding-top: 0px !important; }
     </style>
 """, unsafe_allow_html=True)
 
