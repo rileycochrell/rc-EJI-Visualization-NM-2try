@@ -213,13 +213,17 @@ def plot_comparison(data1, data2, label1, label2):
                          customdata=wingardium_leviosAH,
                          hovertemplate="%{x}<br>%{customdata}<extra></extra>",
                          showlegend=False))
-    # Data2 no bar
-    fig.add_trace(go.Bar(x=metric_names, y=nodata2_y,
-                         marker=dict(color="white", pattern=NO_DATA_PATTERN),
-                         offsetgroup=1, width=0.35, showlegend=False))
-                         customdata=wingardium_leviosAH,
-                         hovertemplate="%{x}<br>%{customdata}<extra></extra>",
-                         showlegend=False))
+        # Data2 no bar
+    fig.add_trace(go.Bar(
+        x=metric_names,
+        y=nodata2_y,
+        marker=dict(color="white", pattern=NO_DATA_PATTERN),
+        offsetgroup=1,
+        width=0.35,
+        customdata=wingardium_leviosAH,
+        hovertemplate="%{x}<br>%{customdata}<extra></extra>",
+        showlegend=False
+    ))
     # Legend
     fig.add_trace(go.Bar(x=[None], y=[None],
                          marker=dict(color="white", pattern=NO_DATA_PATTERN),
