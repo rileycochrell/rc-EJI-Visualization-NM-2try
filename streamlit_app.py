@@ -17,7 +17,7 @@ st.set_page_config(
 # ------------------------------
 
 st.markdown('<style>div[data-testid="stSidebarNav"] {display: none;}</style>', unsafe_allow_html=True)
-st.logo(icon_image="🌎", image=None)
+
 st.markdown(
     """
 <style>
