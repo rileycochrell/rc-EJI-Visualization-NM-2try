@@ -34,7 +34,7 @@ div[data-testid="stLogoSpacer"] {
 /* ::before for the top line (TEAM 23:) */
 div[data-testid="stLogoSpacer"]::before {
     content: "TEAM 23:";
-    font-size: 20px; /* Larger font size */
+    font-size: 30px; /* Larger font size */
     font-weight: bold;
     white-space: nowrap;
     margin-bottom: 5px; /* Space between lines */
@@ -43,7 +43,8 @@ div[data-testid="stLogoSpacer"]::before {
 /* ::after for the bottom line (🌎 Environmental Justice in New Mexico) */
 div[data-testid="stLogoSpacer"]::after {
     content: "🌎 Environmental Justice in New Mexico";
-    font-size: 16px; /* Smaller font size */
+    text-align: center;
+    font-size: 20px; /* Smaller font size */
 }
 
 </style>
