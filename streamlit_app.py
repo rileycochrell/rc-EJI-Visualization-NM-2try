@@ -161,7 +161,7 @@ def display_colored_table_html(df, color_map, pretty_map, title=None):
         row_style = "background-color:#ffb3b3;" if highlight else ""
         body_html += f"<tr style='{row_style}'>"
         for val in row:
-            cell_text = f"{val:.3f}" if isinstance(val, float) else val
+            cell_text = "No Data" if pd.isna(val) else (f"{val:.3f}" if isinstance(val, float) else val)
             body_html += f"<td style='text-align:center;padding:4px;border:1px solid #ccc'>{cell_text}</td>"
         body_html += "</tr>"
 
