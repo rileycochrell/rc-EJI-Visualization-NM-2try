@@ -143,26 +143,44 @@ def get_contrast_color(hex_color):
 def display_colored_table_html(df, color_map, pretty_map, title=None):
     if isinstance(df, pd.Series):
         df = df.to_frame().T
+
     df_display = df.rename(columns=pretty_map)
+
+    # Replace NaN with "No Data"
+    df_display = df_display.replace({np.nan: "No Data"})
+
     if title:
         st.markdown(f"### {title}")
 
+    # ---- Build table header ----
     header_html = "<tr>"
     for col in df_display.columns:
-        orig = [k for k,v in pretty_map.items() if v == col]
+        orig = [k for k, v in pretty_map.items() if v == col]
         color = color_map.get(orig[0], "#FFFFFF") if orig else "#FFFFFF"
         text_color = get_contrast_color(color)
-        header_html += f'<th style="background-color:{color};color:{text_color};padding:6px;text-align:center;">{col}</th>'
+        header_html += (
+            f'<th style="background-color:{color};color:{text_color};padding:6px;text-align:center;">'
+            f"{col}</th>"
+        )
     header_html += "</tr>"
 
+    # ---- Build rows ----
     body_html = ""
     for _, row in df_display.iterrows():
-        highlight = any([(isinstance(v, (int,float)) and v >= 0.76) or (isinstance(v, str) and "very high" in v.lower()) for v in row])
+        # Highlight if numeric ≥ 0.76
+        highlight = any([
+            (isinstance(v, (int, float)) and v >= 0.76)
+            for v in row
+            if v != "No Data"
+        ])
         row_style = "background-color:#ffb3b3;" if highlight else ""
+
         body_html += f"<tr style='{row_style}'>"
         for val in row:
-            cell_text = f"{val:.3f}" if isinstance(val, float) else val
-            body_html += f"<td style='text-align:center;padding:4px;border:1px solid #ccc'>{cell_text}</td>"
+            body_html += (
+                f"<td style='text-align:center;padding:4px;border:1px solid #ccc'>"
+                f"{val}</td>"
+            )
         body_html += "</tr>"
 
     table_html = f"<table style='border-collapse:collapse;width:100%;border:1px solid black;'>{header_html}{body_html}</table>"
@@ -212,7 +230,14 @@ def plot_single_chart(title, data_values, area_label=None):
 
     fig = go.Figure()
 
-    # Real data
+        # --------------- ADDED: labels outside bar ---------------
+
+    external_labels = [
+        f"{area_label} — No Data" if pd.isna(v) else ""
+        for v in vals
+    ]
+
+    # ------------------- MAIN DATA BAR -------------------
     fig.add_trace(go.Bar(
         x=[pretty[m] for m in metrics],
         y=has_y,
@@ -221,23 +246,24 @@ def plot_single_chart(title, data_values, area_label=None):
         texttemplate="%{text}",
         textposition="inside",
         textfont=dict(size=10, color=fonts),
-        customdata=customdata,
-        hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
+        customdata=wingardium_leviOsa,
+        hovertemplate="%{x}<br>%{customdata}<extra></extra>",
         showlegend=False
     ))
 
-    # No data overlay
+    # ------------------- NO DATA BAR -------------------
     fig.add_trace(go.Bar(
         x=[pretty[m] for m in metrics],
         y=nodata_y,
         marker=dict(color="white", pattern=NO_DATA_PATTERN),
-        text=["No Data" if pd.isna(v) else "" for v in vals],
-        textposition="outside",
-        textfont=dict(size=10, color="black"),
-        customdata=customdata,
-        hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
+        text=external_labels,               # <-- outside label text
+        textposition="outside",             # <-- outside placement
+        textfont=dict(size=11, color="black"),
+        customdata=wingardium_leviOsa,
+        hovertemplate="%{x}<br>%{customdata}<extra></extra>",
         name="No Data"
     ))
+
 
     fig.update_layout(
         title=title,
