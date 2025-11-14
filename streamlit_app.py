@@ -257,7 +257,7 @@ def plot_single_chart(title, data_values, area_label=None):
         legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
     )
 
-st.plotly_chart(fig, width="stretch")
+    st.plotly_chart(fig, width="stretch")
 
 def plot_comparison(data1, data2, label1, label2):
     vals1 = np.array([np.nan if pd.isna(v) else float(v) for v in data1.values])
