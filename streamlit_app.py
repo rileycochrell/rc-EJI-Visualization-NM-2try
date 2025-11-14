@@ -16,7 +16,7 @@ st.set_page_config(
 # Hide Streamlit's Auto Navigation
 # ------------------------------
 st.markdown('<style>div[data-testid="stSidebarNav"] {display: none;}</style>', unsafe_allow_html=True)
-st.logo(icon_image="🌎")
+st.logo(icon_image="🌎", image=None)
 st.sidebar.header("🌎 Environmental Justice in New Mexico")
 
 # ------------------------------
