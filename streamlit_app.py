@@ -42,7 +42,7 @@ div[data-testid="stLogoSpacer"]::before {
 
 /* ::after for the bottom line (🌎 Environmental Justice in New Mexico) */
 div[data-testid="stLogoSpacer"]::after {
-    content: "🌎 Environmental Justice in New Mexico";
+    content: "🌎 Environmental Justice in     New Mexico";
     text-align: center;
     font-size: 20px; /* Smaller font size */
     font-weight: bold;
