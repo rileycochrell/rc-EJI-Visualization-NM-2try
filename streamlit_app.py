@@ -16,7 +16,7 @@ with st.sidebar:
     st.page_link('streamlit_app.py', label='EJI Visualization', icon='📊')
     st.page_link('pages/1_What_Goes_Into_EJI.py', label='What Goes Into the EJI?', icon='🧩')
     st.page_link('pages/2_EJI_Scale_and_Categories.py', label='Understanding the EJI Scale', icon='🌡️')
-
+st.sidebar.title("🌎 Environmental Justice in New Mexico")
 
 # ------------------------------
 # Load Data
