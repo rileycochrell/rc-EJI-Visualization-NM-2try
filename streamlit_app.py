@@ -265,8 +265,8 @@ def plot_comparison(data1, data2, label1, label2):
     texts2, fonts2 = build_texts_and_colors(colors2, label2, vals2)
 
     # UPDATED: customdata arrays with (area, value)
-    custom1 = build_customdata(label1, vals1)
-    custom2 = build_customdata(label2, vals2)
+    wingardium_leviOsa = build_customdata(label1, vals1)
+    wingardium_leviosAH = build_customdata(label2, vals2)
 
     fig = go.Figure()
 
@@ -281,7 +281,7 @@ def plot_comparison(data1, data2, label1, label2):
         texttemplate="%{text}",
         textposition="inside",
         textfont=dict(size=10, color=fonts1),
-        customdata=custom1,
+        customdata=wingardium_leviOsa,
         hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
         showlegend=False
     ))
@@ -293,7 +293,7 @@ def plot_comparison(data1, data2, label1, label2):
         marker=dict(color="white", pattern=NO_DATA_PATTERN),
         offsetgroup=0,
         width=0.35,
-        customdata=custom1,
+        customdata=wingardium_leviOsa,
         hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
         showlegend=False
     ))
@@ -309,7 +309,7 @@ def plot_comparison(data1, data2, label1, label2):
         texttemplate="%{text}",
         textposition="inside",
         textfont=dict(size=10, color=fonts2),
-        customdata=custom2,
+        customdata=wingardium_leviosAH,
         hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
         showlegend=False
     ))
@@ -321,7 +321,7 @@ def plot_comparison(data1, data2, label1, label2):
         marker=dict(color="white", pattern=NO_DATA_PATTERN),
         offsetgroup=1,
         width=0.35,
-        customdata=custom2,
+        customdata=wingardium_leviosAH,
         hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
         showlegend=False
     ))
