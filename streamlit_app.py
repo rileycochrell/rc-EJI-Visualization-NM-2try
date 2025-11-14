@@ -46,7 +46,7 @@ div[data-testid="stLogoSpacer"]::after {
     text-align: center;
     font-size: 16px; /* Smaller font size */
     font-weight: bold;
-    margin-bottom: 20px;
+    margin-bottom: -5px;
 }
 
 </style>
