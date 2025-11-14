@@ -249,13 +249,13 @@ fig.add_trace(go.Bar(
     ))
 
 
-    fig.update_layout(
-        title=title,
-        yaxis=dict(title="Percentile Rank Value", range=[0, 1], dtick=0.25),
-        xaxis_title="Environmental Justice Index Metric",
-        barmode="overlay",
-        legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
-    )
+fig.update_layout(
+    title=title,
+    yaxis=dict(title="Percentile Rank Value", range=[0, 1], dtick=0.25),
+    xaxis_title="Environmental Justice Index Metric",
+    barmode="overlay",
+    legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
+)
 
     st.plotly_chart(fig, width="stretch")
 
