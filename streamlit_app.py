@@ -173,7 +173,6 @@ NO_DATA_PATTERN = dict(shape="/", fgcolor="black", bgcolor="white", size=6)
 def build_nodata_text(area_label, values):
     return [f"{area_label}<br>No Data" if pd.isna(v) else "" for v in values]
 
-
 # Build hover text from area + value
 def build_customdata(area_label, values):
     out = []
@@ -210,12 +209,11 @@ def plot_single_chart(title, data_values, area_label=None):
 
     texts, fonts = build_texts_and_colors(color_list, area_label, vals)
 
-    # UPDATED: customdata now holds area + value
     customdata = build_customdata(area_label, vals)
 
     fig = go.Figure()
 
-    # Real data
+    # Real data bars
     fig.add_trace(go.Bar(
         x=[pretty[m] for m in metrics],
         y=has_y,
@@ -229,9 +227,10 @@ def plot_single_chart(title, data_values, area_label=None):
         showlegend=False
     ))
 
-    # No data overlay
-    nodata_text = build_nodata_text(area_label, vals)
-    
+    # Build text for No Data bars
+    nodata_text = [f"{area_label}<br>No Data" if pd.isna(v) else "" for v in vals]
+
+    # No data overlay bars
     fig.add_trace(go.Bar(
         x=[pretty[m] for m in metrics],
         y=nodata_y,
@@ -239,18 +238,14 @@ def plot_single_chart(title, data_values, area_label=None):
         text=nodata_text,
         texttemplate="%{text}",
         textposition="outside",
-    
-        # OPTION B — white background for labels (recommended for dark mode)
-        insidetextanchor="middle",
-        textfont=dict(size=10, color="black"),  # color of text
-        insidetextfont=dict(size=10, color="black"),
-        textbgcolor="white",
-    
+
+        # UPDATED: automatic contrast text color
+        textfont=dict(size=10, color=[get_contrast_color("white") for _ in vals]),
+
         customdata=customdata,
         hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
         name="No Data"
     ))
-
 
     fig.update_layout(
         title=title,
@@ -264,7 +259,7 @@ def plot_single_chart(title, data_values, area_label=None):
 
 def plot_comparison(data1, data2, label1, label2):
     vals1 = np.array([np.nan if pd.isna(v) else float(v) for v in data1.values])
-    vals2 = np.array([np.nan if pd.isna(v) else float(v) for v in data2.values])
+    vals2 = np.array([np.nan if pd.isna(v) else float(v) else pd.isna(v) else float(v) for v in vals2]),
     metric_names = [pretty[m] for m in metrics]
     colors1 = [dataset1_rainbows[m] for m in metrics]
     colors2 = [dataset2_rainbows[m] for m in metrics]
@@ -277,13 +272,12 @@ def plot_comparison(data1, data2, label1, label2):
     texts1, fonts1 = build_texts_and_colors(colors1, label1, vals1)
     texts2, fonts2 = build_texts_and_colors(colors2, label2, vals2)
 
-    # UPDATED: customdata arrays with (area, value)
     wingardium_leviOsa = build_customdata(label1, vals1)
     wingardium_leviosAH = build_customdata(label2, vals2)
 
     fig = go.Figure()
 
-    # Dataset 1 — real values
+    # Dataset 1 — real bars
     fig.add_trace(go.Bar(
         x=metric_names,
         y=has1_y,
@@ -299,23 +293,24 @@ def plot_comparison(data1, data2, label1, label2):
         showlegend=False
     ))
 
-        # Dataset 1 — no data
+    # Dataset 1 — no data
+    nodata_text1 = [f"{label1}<br>No Data" if pd.isna(v) else "" for v in vals1]
     fig.add_trace(go.Bar(
         x=metric_names,
         y=nodata1_y,
         marker=dict(color="white", pattern=NO_DATA_PATTERN),
         offsetgroup=0,
         width=0.35,
-        text=["No Data" if pd.isna(v) else "" for v in vals1],
+        text=nodata_text1,
         texttemplate="%{text}",
         textposition="outside",
-        textfont=dict(size=10, color="black"),
+        textfont=dict(size=10, color=[get_contrast_color("white") for _ in vals1]),
         customdata=wingardium_leviOsa,
         hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
         showlegend=False
     ))
 
-    # Dataset 2 — real data
+    # Dataset 2 — real bars
     fig.add_trace(go.Bar(
         x=metric_names,
         y=has2_y,
@@ -332,21 +327,21 @@ def plot_comparison(data1, data2, label1, label2):
     ))
 
     # Dataset 2 — no data
+    nodata_text2 = [f"{label2}<br>No Data" if pd.isna(v) else "" for v in vals2]
     fig.add_trace(go.Bar(
         x=metric_names,
         y=nodata2_y,
         marker=dict(color="white", pattern=NO_DATA_PATTERN),
         offsetgroup=1,
         width=0.35,
-        text=["No Data" if pd.isna(v) else "" for v in vals2],
+        text=nodata_text2,
         texttemplate="%{text}",
         textposition="outside",
-        textfont=dict(size=10, color="black"),
+        textfont=dict(size=10, color=[get_contrast_color("white") for _ in vals2]),
         customdata=wingardium_leviosAH,
         hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
         showlegend=False
     ))
-
 
     # Legend entry
     fig.add_trace(go.Bar(
@@ -354,16 +349,6 @@ def plot_comparison(data1, data2, label1, label2):
         marker=dict(color="white", pattern=NO_DATA_PATTERN),
         name="No Data"
     ))
-
-    compare_table = pd.DataFrame({
-        "Metric": [pretty[m] for m in metrics],
-        label1: data1.values,
-        label2: data2.values
-    }).set_index("Metric").T
-
-    st.subheader("⚖️ Data Comparison Table")
-    display_colored_table_html(compare_table.reset_index(), dataset1_rainbows,
-                               {"index": "Metric", **pretty}, title=None)
 
     fig.update_layout(
         barmode="group",
@@ -373,6 +358,7 @@ def plot_comparison(data1, data2, label1, label2):
     )
 
     st.plotly_chart(fig, width="stretch")
+
     st.caption("_Note: darker bars represent the first dataset; lighter bars represent the second dataset._")
 
 # ------------------------------
