@@ -13,28 +13,55 @@ st.set_page_config(
 )
 
 # ------------------------------
-# Hide Streamlit's Auto Navigation
+# Hide Streamlit's Auto Navigation and Add Custom Title in Logo Spot
 # ------------------------------
+
 st.markdown('<style>div[data-testid="stSidebarNav"] {display: none;}</style>', unsafe_allow_html=True)
 
+st.markdown(
+    """
+<style>
+/* Target the logo spacer div and inject text using the ::before pseudo-element */
+div[data-testid="stLogoSpacer"]::before {
+    /* Use \A for a newline character in CSS content */
+    content: "TEAM 23:" "\\A" "🌎 Environmental Justice in New Mexico";
+    
+    /* Display settings to center and respect newlines */
+    white-space: pre-wrap; /* Allows the \A newline to work and respects spacing */
+    text-align: center; 
+    display: block; /* Ensures the div takes up necessary space */
+    width: 100%;
+    
+    /* Font styling */
+    font-size: 16px; /* Base size */
+    font-weight: bold;
+    color: inherit; /* Use the default sidebar text color */
+
+    /* Padding for positioning */
+    padding-top: 10px;
+}
+
+/* Optional: Make the first line bigger/bolder than the second line */
+/* This requires a slightly more complex approach usually done with JS or multiple elements */
+/* The above code will make both lines the same size and weight */
+
+
+</style>
+""",
+    unsafe_allow_html=True,
+)
+
+# 3. Ensure no logo is set via st.logo()
+# st.logo(icon_image="🌎", image=None) # Keep this commented out or removed
+
 # ------------------------------
-# Custom Sidebar Header and Navigation
+# Custom Sidebar
 # ------------------------------
 with st.sidebar:
-    # Use st.sidebar.markdown with HTML for precise control over styling and alignment
-    st.markdown(
-        """
-        <div style="text-align: center; padding-top: 15px; padding-bottom: 15px;">
-            <div style="font-size: 20px; font-weight: bold; margin-bottom: 5px;">TEAM 23:</div>
-            <div style="font-size: 16px; white-space: nowrap;">🌎 Environmental Justice in New Mexico</div>
-        </div>
-        <hr style="border: none; border-bottom: 1px solid rgba(49, 51, 63, 0.2);">
-        """,
-        unsafe_allow_html=True
-    )
-    # The previous CSS injection block targeting stLogoSpacer has been removed.
+    # Add a horizontal rule for visual separation below the logo spot
+    st.write("---") 
 
-    # Custom manual navigation below the header
+    # Custom manual navigation
     st.page_link("streamlit_app.py",
                  label="EJI Visualization",
                  icon="📊")
