@@ -21,34 +21,30 @@ st.markdown('<style>div[data-testid="stSidebarNav"] {display: none;}</style>', u
 st.markdown(
     """
 <style>
-/* Target the logo spacer div container */
 div[data-testid="stLogoSpacer"] {
     display: flex;
-    flex-direction: column; /* Stack the before and after elements vertically */
-    justify-content: center; /* Center vertically */
-    align-items: center; /* Center horizontally */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     height: 100%;
-    padding-top: 40px; /* Add some padding to move it down slightly */
+    padding-top: 40px;
 }
 
-/* ::before for the top line (TEAM 23:) */
 div[data-testid="stLogoSpacer"]::before {
     content: "TEAM 23:";
-    font-size: 30px; /* Larger font size */
+    font-size: 30px;
     font-weight: bold;
     white-space: nowrap;
-    margin-bottom: 5px; /* Space between lines */
+    margin-bottom: 5px;
 }
 
-/* ::after for the bottom line (🌎 Environmental Justice in New Mexico) */
 div[data-testid="stLogoSpacer"]::after {
     content: "🌎 Environmental Justice in New Mexico";
     text-align: center;
-    font-size: 18px; /* Smaller font size */
+    font-size: 18px;
     font-weight: bold;
     margin-bottom: -40px;
 }
-
 </style>
 """,
     unsafe_allow_html=True,
@@ -58,10 +54,8 @@ div[data-testid="stLogoSpacer"]::after {
 # Custom Sidebar
 # ------------------------------
 with st.sidebar:
-    # Add a horizontal rule for visual separation below the logo spot
-    st.write("---") 
+    st.write("---")
 
-    # Custom manual navigation
     st.page_link("streamlit_app.py",
                  label="EJI Visualization",
                  icon="📊")
@@ -73,6 +67,7 @@ with st.sidebar:
     st.page_link("pages/2_EJI_Scale_and_Categories.py",
                  label="What Does the EJI Mean?",
                  icon="🌡️")
+
 # ------------------------------
 # Load Data
 # ------------------------------
@@ -136,6 +131,7 @@ dataset2_rainbows = {
 # ------------------------------
 # Helper Functions
 # ------------------------------
+
 def get_contrast_color(hex_color):
     try:
         rgb = tuple(int(hex_color.strip("#")[i:i+2], 16) for i in (0, 2, 4))
@@ -150,6 +146,7 @@ def display_colored_table_html(df, color_map, pretty_map, title=None):
     df_display = df.rename(columns=pretty_map)
     if title:
         st.markdown(f"### {title}")
+
     header_html = "<tr>"
     for col in df_display.columns:
         orig = [k for k,v in pretty_map.items() if v == col]
@@ -157,6 +154,7 @@ def display_colored_table_html(df, color_map, pretty_map, title=None):
         text_color = get_contrast_color(color)
         header_html += f'<th style="background-color:{color};color:{text_color};padding:6px;text-align:center;">{col}</th>'
     header_html += "</tr>"
+
     body_html = ""
     for _, row in df_display.iterrows():
         highlight = any([(isinstance(v, (int,float)) and v >= 0.76) or (isinstance(v, str) and "very high" in v.lower()) for v in row])
@@ -166,11 +164,22 @@ def display_colored_table_html(df, color_map, pretty_map, title=None):
             cell_text = f"{val:.3f}" if isinstance(val, float) else val
             body_html += f"<td style='text-align:center;padding:4px;border:1px solid #ccc'>{cell_text}</td>"
         body_html += "</tr>"
+
     table_html = f"<table style='border-collapse:collapse;width:100%;border:1px solid black;'>{header_html}{body_html}</table>"
     st.markdown(table_html, unsafe_allow_html=True)
 
 NO_DATA_HEIGHT = 0.5
 NO_DATA_PATTERN = dict(shape="/", fgcolor="black", bgcolor="white", size=6)
+
+# Build hover text from area + value
+def build_customdata(area_label, values):
+    out = []
+    for v in values:
+        if pd.isna(v):
+            out.append([area_label, "No Data"])
+        else:
+            out.append([area_label, f"{v:.3f}"])
+    return out
 
 def build_texts_and_colors(colors, area_label, values):
     texts, fonts = [], []
@@ -187,36 +196,49 @@ def build_texts_and_colors(colors, area_label, values):
 # ------------------------------
 # Graph Functions
 # ------------------------------
+
 def plot_single_chart(title, data_values, area_label=None):
+
     vals = np.array([np.nan if pd.isna(v) else float(v) for v in data_values.values])
     color_list = [dataset1_rainbows[m] for m in metrics]
+
     has_y = [v if not pd.isna(v) else 0 for v in vals]
     nodata_y = [NO_DATA_HEIGHT if pd.isna(v) else 0 for v in vals]
+
     texts, fonts = build_texts_and_colors(color_list, area_label, vals)
 
-    wingardium_leviOsa = [
-        "No Data" if pd.isna(v) else f"{v:.2f}"
-        for v in vals
-    ]
+    # UPDATED: customdata now holds area + value
+    customdata = build_customdata(area_label, vals)
+
     fig = go.Figure()
+
+    # Real data
     fig.add_trace(go.Bar(
-        x=[pretty[m] for m in metrics], y=has_y,
+        x=[pretty[m] for m in metrics],
+        y=has_y,
         marker_color=color_list,
-        text=texts, texttemplate="%{text}", textposition="inside",
+        text=texts,
+        texttemplate="%{text}",
+        textposition="inside",
         textfont=dict(size=10, color=fonts),
-        customdata=wingardium_leviOsa,
-        hovertemplate="%{x}<br>%{customdata}<extra></extra>",
+        customdata=customdata,
+        hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
         showlegend=False
     ))
+
+    # No data overlay
     fig.add_trace(go.Bar(
-        x=[pretty[m] for m in metrics], y=nodata_y,
+        x=[pretty[m] for m in metrics],
+        y=nodata_y,
         marker=dict(color="white", pattern=NO_DATA_PATTERN),
         text=["No Data" if pd.isna(v) else "" for v in vals],
-        textposition="outside", textfont=dict(size=10, color="black"),
-        customdata=wingardium_leviOsa,
-        hovertemplate="%{x}<br>%{customdata}<extra></extra>",
+        textposition="outside",
+        textfont=dict(size=10, color="black"),
+        customdata=customdata,
+        hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
         name="No Data"
     ))
+
     fig.update_layout(
         title=title,
         yaxis=dict(title="Percentile Rank Value", range=[0, 1], dtick=0.25),
@@ -224,7 +246,8 @@ def plot_single_chart(title, data_values, area_label=None):
         barmode="overlay",
         legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
     )
-    st.plotly_chart(fig, width='stretch')
+
+    st.plotly_chart(fig, width="stretch")
 
 def plot_comparison(data1, data2, label1, label2):
     vals1 = np.array([np.nan if pd.isna(v) else float(v) for v in data1.values])
@@ -232,63 +255,90 @@ def plot_comparison(data1, data2, label1, label2):
     metric_names = [pretty[m] for m in metrics]
     colors1 = [dataset1_rainbows[m] for m in metrics]
     colors2 = [dataset2_rainbows[m] for m in metrics]
+
     has1_y = [v if not pd.isna(v) else 0 for v in vals1]
     nodata1_y = [NO_DATA_HEIGHT if pd.isna(v) else 0 for v in vals1]
     has2_y = [v if not pd.isna(v) else 0 for v in vals2]
     nodata2_y = [NO_DATA_HEIGHT if pd.isna(v) else 0 for v in vals2]
+
     texts1, fonts1 = build_texts_and_colors(colors1, label1, vals1)
     texts2, fonts2 = build_texts_and_colors(colors2, label2, vals2)
-    wingardium_leviOsa = [
-        "No Data" if pd.isna(v) else f"{v:.2f}"
-        for v in vals1 ]
-    wingardium_leviosAH = [
-        "No Data" if pd.isna(v) else f"{v:.2f}"
-        for v in vals2 ]
+
+    # UPDATED: customdata arrays with (area, value)
+    custom1 = build_customdata(label1, vals1)
+    custom2 = build_customdata(label2, vals2)
+
     fig = go.Figure()
-    # Data1 real
-    fig.add_trace(go.Bar(x=metric_names, y=has1_y, marker_color=colors1,
-                         offsetgroup=0, width=0.35, text=texts1,
-                         texttemplate="%{text}", textposition="inside",
-                         textfont=dict(size=10, color=fonts1),
-                         customdata=wingardium_leviOsa,
-                         hovertemplate="%{x}<br>%{customdata}<extra></extra>",
-                         showlegend=False))
-    # Data1 no bar
-    fig.add_trace(go.Bar(x=metric_names, y=nodata1_y,
-                         marker=dict(color="white", pattern=NO_DATA_PATTERN),
-                         offsetgroup=0, width=0.35,
-                         customdata=wingardium_leviOsa,
-                         hovertemplate="%{x}<br>%{customdata}<extra></extra>",
-                         showlegend=False))
-    # Data2 real
-    fig.add_trace(go.Bar(x=metric_names, y=has2_y, marker_color=colors2,
-                         offsetgroup=1, width=0.35, text=texts2,
-                         texttemplate="%{text}", textposition="inside",
-                         textfont=dict(size=10, color=fonts2),
-                         customdata=wingardium_leviosAH,
-                         hovertemplate="%{x}<br>%{customdata}<extra></extra>",
-                         showlegend=False))
-        # Data2 no bar
+
+    # Dataset 1 — real values
+    fig.add_trace(go.Bar(
+        x=metric_names,
+        y=has1_y,
+        marker_color=colors1,
+        offsetgroup=0,
+        width=0.35,
+        text=texts1,
+        texttemplate="%{text}",
+        textposition="inside",
+        textfont=dict(size=10, color=fonts1),
+        customdata=custom1,
+        hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
+        showlegend=False
+    ))
+
+    # Dataset 1 — no data
+    fig.add_trace(go.Bar(
+        x=metric_names,
+        y=nodata1_y,
+        marker=dict(color="white", pattern=NO_DATA_PATTERN),
+        offsetgroup=0,
+        width=0.35,
+        customdata=custom1,
+        hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
+        showlegend=False
+    ))
+
+    # Dataset 2 — real data
+    fig.add_trace(go.Bar(
+        x=metric_names,
+        y=has2_y,
+        marker_color=colors2,
+        offsetgroup=1,
+        width=0.35,
+        text=texts2,
+        texttemplate="%{text}",
+        textposition="inside",
+        textfont=dict(size=10, color=fonts2),
+        customdata=custom2,
+        hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
+        showlegend=False
+    ))
+
+    # Dataset 2 — no data
     fig.add_trace(go.Bar(
         x=metric_names,
         y=nodata2_y,
         marker=dict(color="white", pattern=NO_DATA_PATTERN),
         offsetgroup=1,
         width=0.35,
-        customdata=wingardium_leviosAH,
-        hovertemplate="%{x}<br>%{customdata}<extra></extra>",
+        customdata=custom2,
+        hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
         showlegend=False
     ))
-    # Legend
-    fig.add_trace(go.Bar(x=[None], y=[None],
-                         marker=dict(color="white", pattern=NO_DATA_PATTERN),
-                         name="No Data"))
+
+    # Legend entry
+    fig.add_trace(go.Bar(
+        x=[None], y=[None],
+        marker=dict(color="white", pattern=NO_DATA_PATTERN),
+        name="No Data"
+    ))
 
     compare_table = pd.DataFrame({
         "Metric": [pretty[m] for m in metrics],
         label1: data1.values,
         label2: data2.values
     }).set_index("Metric").T
+
     st.subheader("⚖️ Data Comparison Table")
     display_colored_table_html(compare_table.reset_index(), dataset1_rainbows,
                                {"index": "Metric", **pretty}, title=None)
@@ -299,22 +349,26 @@ def plot_comparison(data1, data2, label1, label2):
         yaxis=dict(title="Percentile Rank Value", range=[0, 1], dtick=0.25),
         legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
     )
-    st.plotly_chart(fig, width='stretch')
+
+    st.plotly_chart(fig, width="stretch")
     st.caption("_Note: darker bars represent the first dataset; lighter bars represent the second dataset._")
 
 # ------------------------------
 # Main App Layout
 # ------------------------------
 st.title("📊 Environmental Justice Index Visualization (New Mexico)")
+
 st.info("""
 **Interpreting the EJI Score:**  
 Lower EJI values (closer to 0) indicate *lower cumulative environmental and social burdens* — generally a good outcome.  
 Higher EJI values (closer to 1) indicate *higher cumulative burdens and vulnerabilities* — generally a worse outcome.
 """)
+
 st.write("Use the dropdowns below to explore data for **New Mexico** or specific **counties**.")
 st.info("🔴 Rows highlighted in red represent areas with **Very High Concern/Burden (EJI ≥ 0.76)**.")
 
 selected_parameter = st.selectbox("View EJI data for:", parameter1)
+
 if selected_parameter == "County":
     selected_county = st.selectbox("Select a New Mexico County:", counties)
     subset = county_df[county_df["County"] == selected_county]
@@ -325,20 +379,24 @@ if selected_parameter == "County":
         display_colored_table_html(subset, dataset1_rainbows, pretty)
         county_values = subset[metrics].iloc[0]
         plot_single_chart(f"EJI Metrics — {selected_county}", county_values, area_label=selected_county)
+
         if st.checkbox("Compare with another dataset"):
             compare_type = st.radio("Compare with:", ["State", "County"])
+
             if compare_type == "State":
                 comp_state = st.selectbox("Select state:", states)
                 comp_row = state_df[state_df["State"] == comp_state]
                 if not comp_row.empty:
                     comp_values = comp_row[metrics].iloc[0]
                     plot_comparison(county_values, comp_values, selected_county, comp_state)
+
             else:
                 comp_county = st.selectbox("Select county:", [c for c in counties if c != selected_county])
                 comp_row = county_df[county_df["County"] == comp_county]
                 if not comp_row.empty:
                     comp_values = comp_row[metrics].iloc[0]
                     plot_comparison(county_values, comp_values, selected_county, comp_county)
+
 else:
     nm_row = state_df[state_df["State"].str.strip().str.lower() == "new mexico"]
     if nm_row.empty:
@@ -347,15 +405,19 @@ else:
         st.subheader("⚖️ New Mexico Statewide EJI Scores")
         display_colored_table_html(nm_row, dataset1_rainbows, pretty)
         nm_values = nm_row[metrics].iloc[0]
+
         plot_single_chart("EJI Metrics — New Mexico", nm_values, area_label="New Mexico")
+
         if st.checkbox("Compare with another dataset"):
             compare_type = st.radio("Compare with:", ["State", "County"])
+
             if compare_type == "State":
                 comp_state = st.selectbox("Select state:", [s for s in states if s.lower() != "new mexico"])
                 comp_row = state_df[state_df["State"] == comp_state]
                 if not comp_row.empty:
                     comp_values = comp_row[metrics].iloc[0]
                     plot_comparison(nm_values, comp_values, "New Mexico", comp_state)
+
             else:
                 comp_county = st.selectbox("Select county:", counties)
                 comp_row = county_df[county_df["County"] == comp_county]
