@@ -232,6 +232,7 @@ def plot_single_chart(title, data_values, area_label=None):
         y=nodata_y,
         marker=dict(color="white", pattern=NO_DATA_PATTERN),
         text=["No Data" if pd.isna(v) else "" for v in vals],
+        texttemplate="%{text}",
         textposition="outside",
         textfont=dict(size=10, color="black"),
         customdata=customdata,
@@ -286,13 +287,17 @@ def plot_comparison(data1, data2, label1, label2):
         showlegend=False
     ))
 
-    # Dataset 1 — no data
+        # Dataset 1 — no data
     fig.add_trace(go.Bar(
         x=metric_names,
         y=nodata1_y,
         marker=dict(color="white", pattern=NO_DATA_PATTERN),
         offsetgroup=0,
         width=0.35,
+        text=["No Data" if pd.isna(v) else "" for v in vals1],
+        texttemplate="%{text}",
+        textposition="outside",
+        textfont=dict(size=10, color="black"),
         customdata=wingardium_leviOsa,
         hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
         showlegend=False
@@ -321,10 +326,15 @@ def plot_comparison(data1, data2, label1, label2):
         marker=dict(color="white", pattern=NO_DATA_PATTERN),
         offsetgroup=1,
         width=0.35,
+        text=["No Data" if pd.isna(v) else "" for v in vals2],
+        texttemplate="%{text}",
+        textposition="outside",
+        textfont=dict(size=10, color="black"),
         customdata=wingardium_leviosAH,
         hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
         showlegend=False
     ))
+
 
     # Legend entry
     fig.add_trace(go.Bar(
