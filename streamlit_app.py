@@ -2,64 +2,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-import streamlit.components.v1 as components
-from bs4 import BeautifulSoup
-
-# ------------------------------------------------
-# Inject JavaScript to detect dynamic theme
-# ------------------------------------------------
-def inject_theme_detector():
-    components.html(
-        """
-        <script>
-        const updateTheme = () => {
-            const bg = window.getComputedStyle(document.documentElement)
-                             .getPropertyValue('--primary-background-color')
-                             .trim();
-            // Light themes have white-ish backgrounds
-            const mode = bg.startsWith("rgb(255") ? "light" : "dark";
-            let el = window.parent.document.getElementById("streamlit-theme-state");
-            if (!el) {
-                el = window.parent.document.createElement("div");
-                el.id = "streamlit-theme-state";
-                el.style.display = "none";
-                window.parent.document.body.appendChild(el);
-            }
-            el.textContent = mode;
-        };
-
-        new MutationObserver(updateTheme).observe(
-            document.documentElement,
-            { attributes: true, childList: true, subtree: true }
-        );
-        updateTheme();
-        </script>
-        """,
-        height=0,
-    )
-
-inject_theme_detector()
-
-
-# ------------------------------------------------
-# Read theme dynamically via HTML snapshot
-# ------------------------------------------------
-def get_dynamic_theme():
-    try:
-        html = st._repr_html_()
-        soup = BeautifulSoup(html, "html.parser")
-        el = soup.find(id="streamlit-theme-state")
-        if el:
-            return el.get_text().strip()
-    except Exception:
-        pass
-    return "light"
-
-
-def get_streamlit_theme_fontcolor():
-    theme = get_dynamic_theme()
-    return "white" if theme == "dark" else "black"
-
 
 # ------------------------------
 # Page Config
@@ -73,9 +15,7 @@ st.set_page_config(
 # ------------------------------
 # Hide Streamlit's Auto Navigation and Add Custom Title in Logo Spot
 # ------------------------------
-
 st.markdown('<style>div[data-testid="stSidebarNav"] {display: none;}</style>', unsafe_allow_html=True)
-
 st.markdown(
     """
 <style>
@@ -113,18 +53,9 @@ div[data-testid="stLogoSpacer"]::after {
 # ------------------------------
 with st.sidebar:
     st.write("---")
-
-    st.page_link("streamlit_app.py",
-                 label="EJI Visualization",
-                 icon="📊")
-
-    st.page_link("pages/1_What_Goes_Into_EJI.py",
-                 label="What Goes Into the EJI?",
-                 icon="🧩")
-
-    st.page_link("pages/2_EJI_Scale_and_Categories.py",
-                 label="What Does the EJI Mean?",
-                 icon="🌡️")
+    st.page_link("streamlit_app.py", label="EJI Visualization", icon="📊")
+    st.page_link("pages/1_What_Goes_Into_EJI.py", label="What Goes Into the EJI?", icon="🧩")
+    st.page_link("pages/2_EJI_Scale_and_Categories.py", label="What Does the EJI Mean?", icon="🌡️")
 
 # ------------------------------
 # Load Data
@@ -189,7 +120,6 @@ dataset2_rainbows = {
 # ------------------------------
 # Helper Functions
 # ------------------------------
-
 def get_contrast_color(hex_color):
     try:
         rgb = tuple(int(hex_color.strip("#")[i:i+2], 16) for i in (0, 2, 4))
@@ -198,7 +128,36 @@ def get_contrast_color(hex_color):
     brightness = (0.299*rgb[0] + 0.587*rgb[1] + 0.114*rgb[2])
     return "black" if brightness > 150 else "white"
 
+# ------------------------------
+# Theme-aware "No Data" font
+# ------------------------------
+if "theme" not in st.session_state:
+    st.session_state.theme = "light"
 
+# JavaScript to detect Streamlit theme
+st.markdown(
+    """
+<script>
+const updateTheme = () => {
+    const bg = getComputedStyle(document.body).getPropertyValue('--background-color') || '';
+    if (bg.includes('0, 0, 0')) {
+        window.parent.postMessage({func: 'setTheme', theme: 'dark'}, '*');
+    } else {
+        window.parent.postMessage({func: 'setTheme', theme: 'light'}, '*');
+    }
+};
+setInterval(updateTheme, 1000);
+</script>
+""",
+    unsafe_allow_html=True
+)
+
+def get_theme_color():
+    return "white" if st.session_state.theme == "dark" else "black"
+
+# ------------------------------
+# Table Display
+# ------------------------------
 def display_colored_table_html(df, color_map, pretty_map, title=None):
     if isinstance(df, pd.Series):
         df = df.to_frame().T
@@ -227,6 +186,9 @@ def display_colored_table_html(df, color_map, pretty_map, title=None):
     table_html = f"<table style='border-collapse:collapse;width:100%;border:1px solid black;'>{header_html}{body_html}</table>"
     st.markdown(table_html, unsafe_allow_html=True)
 
+# ------------------------------
+# Graph Functions
+# ------------------------------
 NO_DATA_HEIGHT = 0.5
 NO_DATA_PATTERN = dict(shape="/", fgcolor="black", bgcolor="white", size=6)
 
@@ -244,31 +206,23 @@ def build_texts_and_colors(colors, area_label, values):
     for c, v in zip(colors, values):
         if pd.isna(v):
             texts.append("No Data")
-            fonts.append(get_streamlit_theme_fontcolor())
+            fonts.append(get_theme_color())
         else:
             val_str = f"{v:.3f}"
             texts.append(f"{area_label}<br>{val_str}" if area_label else f"{val_str}")
             fonts.append(get_contrast_color(c))
     return texts, fonts
 
-# ------------------------------
-# Graph Functions
-# ------------------------------
-
 def plot_single_chart(title, data_values, area_label=None):
-
     vals = np.array([np.nan if pd.isna(v) else float(v) for v in data_values.values])
     color_list = [dataset1_rainbows[m] for m in metrics]
-
     has_y = [v if not pd.isna(v) else 0 for v in vals]
     nodata_y = [NO_DATA_HEIGHT if pd.isna(v) else 0 for v in vals]
-
     texts, fonts = build_texts_and_colors(color_list, area_label, vals)
     customdata = build_customdata(area_label, vals)
 
     fig = go.Figure()
 
-    # Real data
     fig.add_trace(go.Bar(
         x=[pretty[m] for m in metrics],
         y=has_y,
@@ -282,14 +236,13 @@ def plot_single_chart(title, data_values, area_label=None):
         showlegend=False
     ))
 
-    # No data overlay — with dynamic theme font color
     fig.add_trace(go.Bar(
         x=[pretty[m] for m in metrics],
         y=nodata_y,
         marker=dict(color="white", pattern=NO_DATA_PATTERN),
         text=[f"{area_label}<br>No Data" if pd.isna(v) else "" for v in vals],
         textposition="outside",
-        textfont=dict(size=10, color=get_streamlit_theme_fontcolor()),
+        textfont=dict(size=10, color=get_theme_color()),
         customdata=customdata,
         hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
         name="No Data"
@@ -302,9 +255,7 @@ def plot_single_chart(title, data_values, area_label=None):
         barmode="overlay",
         legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
     )
-
-    st.plotly_chart(fig, use_container_width=True)
-
+    st.plotly_chart(fig, width="stretch")
 
 def plot_comparison(data1, data2, label1, label2):
     vals1 = np.array([np.nan if pd.isna(v) else float(v) for v in data1.values])
@@ -312,98 +263,50 @@ def plot_comparison(data1, data2, label1, label2):
     metric_names = [pretty[m] for m in metrics]
     colors1 = [dataset1_rainbows[m] for m in metrics]
     colors2 = [dataset2_rainbows[m] for m in metrics]
-
     has1_y = [v if not pd.isna(v) else 0 for v in vals1]
     nodata1_y = [NO_DATA_HEIGHT if pd.isna(v) else 0 for v in vals1]
     has2_y = [v if not pd.isna(v) else 0 for v in vals2]
     nodata2_y = [NO_DATA_HEIGHT if pd.isna(v) else 0 for v in vals2]
-
     texts1, fonts1 = build_texts_and_colors(colors1, label1, vals1)
     texts2, fonts2 = build_texts_and_colors(colors2, label2, vals2)
-
     custom1 = build_customdata(label1, vals1)
     custom2 = build_customdata(label2, vals2)
 
     fig = go.Figure()
-
-    # Dataset 1 — real values
-    fig.add_trace(go.Bar(
-        x=metric_names,
-        y=has1_y,
-        marker_color=colors1,
-        offsetgroup=0,
-        width=0.35,
-        text=texts1,
-        texttemplate="%{text}",
-        textposition="inside",
-        textfont=dict(size=10, color=fonts1),
-        customdata=custom1,
-        hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
-        showlegend=False
-    ))
-
-    # Dataset 1 — no data overlay
-    fig.add_trace(go.Bar(
-        x=metric_names,
-        y=nodata1_y,
-        marker=dict(color="white", pattern=NO_DATA_PATTERN),
-        offsetgroup=0,
-        width=0.35,
-        text=[f"{label1}<br>No Data" if pd.isna(v) else "" for v in vals1],
-        textposition="outside",
-        textfont=dict(size=10, color=get_streamlit_theme_fontcolor()),
-        customdata=custom1,
-        hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
-        showlegend=False
-    ))
-
-    # Dataset 2 — real values
-    fig.add_trace(go.Bar(
-        x=metric_names,
-        y=has2_y,
-        marker_color=colors2,
-        offsetgroup=1,
-        width=0.35,
-        text=texts2,
-        texttemplate="%{text}",
-        textposition="inside",
-        textfont=dict(size=10, color=fonts2),
-        customdata=custom2,
-        hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
-        showlegend=False
-    ))
-
-    # Dataset 2 — no data
-    fig.add_trace(go.Bar(
-        x=metric_names,
-        y=nodata2_y,
-        marker=dict(color="white", pattern=NO_DATA_PATTERN),
-        offsetgroup=1,
-        width=0.35,
-        text=[f"{label2}<br>No Data" if pd.isna(v) else "" for v in vals2],
-        textposition="outside",
-        textfont=dict(size=10, color=get_streamlit_theme_fontcolor()),
-        customdata=custom2,
-        hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
-        showlegend=False
-    ))
-
-    # Legend entry
-    fig.add_trace(go.Bar(
-        x=[None], y=[None],
-        marker=dict(color="white", pattern=NO_DATA_PATTERN),
-        name="No Data"
-    ))
+    # Dataset 1
+    fig.add_trace(go.Bar(x=metric_names, y=has1_y, marker_color=colors1, offsetgroup=0, width=0.35,
+                         text=texts1, texttemplate="%{text}", textposition="inside",
+                         textfont=dict(size=10, color=fonts1),
+                         customdata=custom1, hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
+                         showlegend=False))
+    fig.add_trace(go.Bar(x=metric_names, y=nodata1_y, marker=dict(color="white", pattern=NO_DATA_PATTERN),
+                         offsetgroup=0, width=0.35,
+                         text=[f"{label1}<br>No Data" if pd.isna(v) else "" for v in vals1],
+                         textposition="outside", textfont=dict(size=10, color=get_theme_color()),
+                         customdata=custom1, hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
+                         showlegend=False))
+    # Dataset 2
+    fig.add_trace(go.Bar(x=metric_names, y=has2_y, marker_color=colors2, offsetgroup=1, width=0.35,
+                         text=texts2, texttemplate="%{text}", textposition="inside",
+                         textfont=dict(size=10, color=fonts2),
+                         customdata=custom2, hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
+                         showlegend=False))
+    fig.add_trace(go.Bar(x=metric_names, y=nodata2_y, marker=dict(color="white", pattern=NO_DATA_PATTERN),
+                         offsetgroup=1, width=0.35,
+                         text=[f"{label2}<br>No Data" if pd.isna(v) else "" for v in vals2],
+                         textposition="outside", textfont=dict(size=10, color=get_theme_color()),
+                         customdata=custom2, hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
+                         showlegend=False))
+    fig.add_trace(go.Bar(x=[None], y=[None], marker=dict(color="white", pattern=NO_DATA_PATTERN), name="No Data"))
 
     compare_table = pd.DataFrame({
-        "Metric": metric_names,
+        "Metric": [pretty[m] for m in metrics],
         label1: data1.values,
         label2: data2.values
     }).set_index("Metric").T
 
     st.subheader("⚖️ Data Comparison Table")
-    display_colored_table_html(compare_table.reset_index(), dataset1_rainbows,
-                               {"index": "Metric", **pretty}, title=None)
+    display_colored_table_html(compare_table.reset_index(), dataset1_rainbows, {"index": "Metric", **pretty}, title=None)
 
     fig.update_layout(
         barmode="group",
@@ -411,21 +314,18 @@ def plot_comparison(data1, data2, label1, label2):
         yaxis=dict(title="Percentile Rank Value", range=[0, 1], dtick=0.25),
         legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
     )
-
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
     st.caption("_Note: darker bars represent the first dataset; lighter bars represent the second dataset._")
 
 # ------------------------------
 # Main App Layout
 # ------------------------------
 st.title("📊 Environmental Justice Index Visualization (New Mexico)")
-
 st.info("""
 **Interpreting the EJI Score:**  
 Lower EJI values (closer to 0) indicate *lower cumulative environmental and social burdens* — generally a good outcome.  
 Higher EJI values (closer to 1) indicate *higher cumulative burdens and vulnerabilities* — generally a worse outcome.
 """)
-
 st.write("Use the dropdowns below to explore data for **New Mexico** or specific **counties**.")
 st.info("🔴 Rows highlighted in red represent areas with **Very High Concern/Burden (EJI ≥ 0.76)**.")
 
@@ -444,21 +344,18 @@ if selected_parameter == "County":
 
         if st.checkbox("Compare with another dataset"):
             compare_type = st.radio("Compare with:", ["State", "County"])
-
             if compare_type == "State":
                 comp_state = st.selectbox("Select state:", states)
                 comp_row = state_df[state_df["State"] == comp_state]
                 if not comp_row.empty:
                     comp_values = comp_row[metrics].iloc[0]
                     plot_comparison(county_values, comp_values, selected_county, comp_state)
-
             else:
                 comp_county = st.selectbox("Select county:", [c for c in counties if c != selected_county])
                 comp_row = county_df[county_df["County"] == comp_county]
                 if not comp_row.empty:
                     comp_values = comp_row[metrics].iloc[0]
                     plot_comparison(county_values, comp_values, selected_county, comp_county)
-
 else:
     nm_row = state_df[state_df["State"].str.strip().str.lower() == "new mexico"]
     if nm_row.empty:
@@ -467,19 +364,16 @@ else:
         st.subheader("⚖️ New Mexico Statewide EJI Scores")
         display_colored_table_html(nm_row, dataset1_rainbows, pretty)
         nm_values = nm_row[metrics].iloc[0]
-
         plot_single_chart("EJI Metrics — New Mexico", nm_values, area_label="New Mexico")
 
         if st.checkbox("Compare with another dataset"):
             compare_type = st.radio("Compare with:", ["State", "County"])
-
             if compare_type == "State":
                 comp_state = st.selectbox("Select state:", [s for s in states if s.lower() != "new mexico"])
                 comp_row = state_df[state_df["State"] == comp_state]
                 if not comp_row.empty:
                     comp_values = comp_row[metrics].iloc[0]
                     plot_comparison(nm_values, comp_values, "New Mexico", comp_state)
-
             else:
                 comp_county = st.selectbox("Select county:", counties)
                 comp_row = county_df[county_df["County"] == comp_county]
