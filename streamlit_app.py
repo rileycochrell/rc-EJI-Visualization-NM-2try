@@ -246,33 +246,33 @@ def plot_comparison(data1, data2, label1, label2):
     nodata2_y = [NO_DATA_HEIGHT if pd.isna(v) else 0 for v in vals2]
     texts1, fonts1 = build_texts_and_colors(colors1, label1, vals1)
     texts2, fonts2 = build_texts_and_colors(colors2, label2, vals2)
-    custom1 = build_customdata(label1, vals1)
-    custom2 = build_customdata(label2, vals2)
+    wingardium_leviOsa = build_customdata(label1, vals1)
+    wingardium_leviosAH = build_customdata(label2, vals2)
 
     fig = go.Figure()
     # Dataset 1
     fig.add_trace(go.Bar(x=metric_names, y=has1_y, marker_color=colors1, offsetgroup=0, width=0.35,
                          text=texts1, texttemplate="%{text}", textposition="inside",
                          textfont=dict(size=10, color=fonts1),
-                         customdata=custom1, hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
+                         customdata=wingardium_leviOsa, hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
                          showlegend=False))
     fig.add_trace(go.Bar(x=metric_names, y=nodata1_y, marker=dict(color="white", pattern=NO_DATA_PATTERN),
                          offsetgroup=0, width=0.35,
                          text=[f"{label1}<br>No Data" if pd.isna(v) else "" for v in vals1],
                          textposition="outside", textfont=dict(size=10, color=get_theme_color()),
-                         customdata=custom1, hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
+                         customdata=wingardium_leviOsa, hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
                          showlegend=False))
     # Dataset 2
     fig.add_trace(go.Bar(x=metric_names, y=has2_y, marker_color=colors2, offsetgroup=1, width=0.35,
                          text=texts2, texttemplate="%{text}", textposition="inside",
                          textfont=dict(size=10, color=fonts2),
-                         customdata=custom2, hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
+                         customdata=wingardium_leviosAH, hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
                          showlegend=False))
     fig.add_trace(go.Bar(x=metric_names, y=nodata2_y, marker=dict(color="white", pattern=NO_DATA_PATTERN),
                          offsetgroup=1, width=0.35,
                          text=[f"{label2}<br>No Data" if pd.isna(v) else "" for v in vals2],
                          textposition="outside", textfont=dict(size=10, color=get_theme_color()),
-                         customdata=custom2, hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
+                         customdata=wingardium_leviosAH, hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
                          showlegend=False))
     fig.add_trace(go.Bar(x=[None], y=[None], marker=dict(color="white", pattern=NO_DATA_PATTERN), name="No Data"))
 
@@ -289,6 +289,7 @@ def plot_comparison(data1, data2, label1, label2):
         barmode="group",
         title=f"EJI Metric Comparison — {label1} vs {label2}",
         yaxis=dict(title="Percentile Rank Value", range=[0, 1], dtick=0.25),
+        xaxis_title="Environmental Justice Index Metric",
         legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
     )
     st.plotly_chart(fig, width="stretch")
