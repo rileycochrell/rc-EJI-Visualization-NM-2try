@@ -231,7 +231,7 @@ def plot_single_chart(title, data_values, area_label=None):
         x=[pretty[m] for m in metrics],
         y=nodata_y,
         marker=dict(color="white", pattern=NO_DATA_PATTERN),
-        text=["No Data" if pd.isna(v) else "" for v in vals],
+        text=[f"{area_label}<br>No Data" if pd.isna(v) else "" for v in vals],
         textposition="outside",
         textfont=dict(size=10, color="black"),
         customdata=customdata,
@@ -293,6 +293,9 @@ def plot_comparison(data1, data2, label1, label2):
         marker=dict(color="white", pattern=NO_DATA_PATTERN),
         offsetgroup=0,
         width=0.35,
+        text=[f"{label1}<br>No Data" if pd.isna(v) else "" for v in vals1],
+        textposition="outside",
+        textfont=dict(size=10, color="black"),
         customdata=wingardium_leviOsa,
         hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
         showlegend=False
@@ -321,6 +324,9 @@ def plot_comparison(data1, data2, label1, label2):
         marker=dict(color="white", pattern=NO_DATA_PATTERN),
         offsetgroup=1,
         width=0.35,
+        text=[f"{label2}<br>No Data" if pd.isna(v) else "" for v in vals2],
+        textposition="outside",
+        textfont=dict(size=10, color="black"),
         customdata=wingardium_leviosAH,
         hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
         showlegend=False
