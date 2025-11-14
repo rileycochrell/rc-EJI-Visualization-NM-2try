@@ -37,7 +37,7 @@ div[data-testid="stLogoSpacer"]::before {
     font-size: 30px; /* Larger font size */
     font-weight: bold;
     white-space: nowrap;
-    margin-bottom: 30px; /* Space between lines */
+    margin-bottom: 5px; /* Space between lines */
 }
 
 /* ::after for the bottom line (🌎 Environmental Justice in New Mexico) */
@@ -46,6 +46,7 @@ div[data-testid="stLogoSpacer"]::after {
     text-align: center;
     font-size: 16px; /* Smaller font size */
     font-weight: bold;
+    margin-bottom: 5px;
 }
 
 </style>
