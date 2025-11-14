@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-from streamlit_theme import st_theme
 
 # ------------------------------
 # Page Config
@@ -129,13 +128,8 @@ def get_contrast_color(hex_color):
     brightness = (0.299*rgb[0] + 0.587*rgb[1] + 0.114*rgb[2])
     return "black" if brightness > 150 else "white"
 
-# ------------------------------
-# Theme-aware font color for "No Data"
-# ------------------------------
-def get_current_theme_color():
-    theme_info = st_theme()
-    if theme_info and theme_info.get('base', '').lower() == 'dark':
-        return "white"
+# No Data font is always black because theme is locked to light
+def get_theme_color():
     return "black"
 
 # ------------------------------
@@ -186,11 +180,10 @@ def build_customdata(area_label, values):
 
 def build_texts_and_colors(colors, area_label, values):
     texts, fonts = [], []
-    nodata_color = get_current_theme_color()
     for c, v in zip(colors, values):
         if pd.isna(v):
             texts.append("No Data")
-            fonts.append(nodata_color)
+            fonts.append(get_theme_color())  # always black
         else:
             val_str = f"{v:.3f}"
             texts.append(f"{area_label}<br>{val_str}" if area_label else f"{val_str}")
@@ -206,6 +199,7 @@ def plot_single_chart(title, data_values, area_label=None):
     customdata = build_customdata(area_label, vals)
 
     fig = go.Figure()
+
     fig.add_trace(go.Bar(
         x=[pretty[m] for m in metrics],
         y=has_y,
@@ -225,7 +219,7 @@ def plot_single_chart(title, data_values, area_label=None):
         marker=dict(color="white", pattern=NO_DATA_PATTERN),
         text=[f"{area_label}<br>No Data" if pd.isna(v) else "" for v in vals],
         textposition="outside",
-        textfont=dict(size=10, color=get_current_theme_color()),
+        textfont=dict(size=10, color=get_theme_color()),
         customdata=customdata,
         hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
         name="No Data"
@@ -238,9 +232,7 @@ def plot_single_chart(title, data_values, area_label=None):
         barmode="overlay",
         legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
     )
-    st.plotly_chart(fig, use_container_width=True)
-
-
+    st.plotly_chart(fig, width="stretch")
 
 def plot_comparison(data1, data2, label1, label2):
     vals1 = np.array([np.nan if pd.isna(v) else float(v) for v in data1.values])
@@ -267,7 +259,7 @@ def plot_comparison(data1, data2, label1, label2):
     fig.add_trace(go.Bar(x=metric_names, y=nodata1_y, marker=dict(color="white", pattern=NO_DATA_PATTERN),
                          offsetgroup=0, width=0.35,
                          text=[f"{label1}<br>No Data" if pd.isna(v) else "" for v in vals1],
-                         textposition="outside", textfont=dict(size=10, color=get_current_theme_color()),
+                         textposition="outside", textfont=dict(size=10, color=get_theme_color()),
                          customdata=custom1, hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
                          showlegend=False))
     # Dataset 2
@@ -279,7 +271,7 @@ def plot_comparison(data1, data2, label1, label2):
     fig.add_trace(go.Bar(x=metric_names, y=nodata2_y, marker=dict(color="white", pattern=NO_DATA_PATTERN),
                          offsetgroup=1, width=0.35,
                          text=[f"{label2}<br>No Data" if pd.isna(v) else "" for v in vals2],
-                         textposition="outside", textfont=dict(size=10, color=get_current_theme_color()),
+                         textposition="outside", textfont=dict(size=10, color=get_theme_color()),
                          customdata=custom2, hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
                          showlegend=False))
     fig.add_trace(go.Bar(x=[None], y=[None], marker=dict(color="white", pattern=NO_DATA_PATTERN), name="No Data"))
@@ -306,12 +298,15 @@ def plot_comparison(data1, data2, label1, label2):
 # Main App Layout
 # ------------------------------
 st.title("📊 Environmental Justice Index Visualization (New Mexico)")
-st.info("""**Interpreting the EJI Score:**  
-Lower EJI values (closer to 0) indicate *lower cumulative environmental and social burdens*.  
-Higher EJI values (closer to 1) indicate *higher cumulative burdens and vulnerabilities*.
+st.info("""
+**Interpreting the EJI Score:**  
+Lower EJI values (closer to 0) indicate *lower cumulative environmental and social burdens* — generally a good outcome.  
+Higher EJI values (closer to 1) indicate *higher cumulative burdens and vulnerabilities* — generally a worse outcome.
 """)
 st.write("Use the dropdowns below to explore data for **New Mexico** or specific **counties**.")
 st.info("🔴 Rows highlighted in red represent areas with **Very High Concern/Burden (EJI ≥ 0.76)**.")
+
+selected_parameter = st.selectbox("View EJI data for:", parameter1)
 
 if selected_parameter == "County":
     selected_county = st.selectbox("Select a New Mexico County:", counties)
