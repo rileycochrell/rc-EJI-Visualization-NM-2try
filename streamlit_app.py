@@ -2,6 +2,64 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
+import streamlit.components.v1 as components
+from bs4 import BeautifulSoup
+
+# ------------------------------------------------
+# Inject JavaScript to detect dynamic theme
+# ------------------------------------------------
+def inject_theme_detector():
+    components.html(
+        """
+        <script>
+        const updateTheme = () => {
+            const bg = window.getComputedStyle(document.documentElement)
+                             .getPropertyValue('--primary-background-color')
+                             .trim();
+            // Light themes have white-ish backgrounds
+            const mode = bg.startsWith("rgb(255") ? "light" : "dark";
+            let el = window.parent.document.getElementById("streamlit-theme-state");
+            if (!el) {
+                el = window.parent.document.createElement("div");
+                el.id = "streamlit-theme-state";
+                el.style.display = "none";
+                window.parent.document.body.appendChild(el);
+            }
+            el.textContent = mode;
+        };
+
+        new MutationObserver(updateTheme).observe(
+            document.documentElement,
+            { attributes: true, childList: true, subtree: true }
+        );
+        updateTheme();
+        </script>
+        """,
+        height=0,
+    )
+
+inject_theme_detector()
+
+
+# ------------------------------------------------
+# Read theme dynamically via HTML snapshot
+# ------------------------------------------------
+def get_dynamic_theme():
+    try:
+        html = st._repr_html_()
+        soup = BeautifulSoup(html, "html.parser")
+        el = soup.find(id="streamlit-theme-state")
+        if el:
+            return el.get_text().strip()
+    except Exception:
+        pass
+    return "light"
+
+
+def get_streamlit_theme_fontcolor():
+    theme = get_dynamic_theme()
+    return "white" if theme == "dark" else "black"
+
 
 # ------------------------------
 # Page Config
@@ -140,12 +198,6 @@ def get_contrast_color(hex_color):
     brightness = (0.299*rgb[0] + 0.587*rgb[1] + 0.114*rgb[2])
     return "black" if brightness > 150 else "white"
 
-# NEW: Streamlit theme-aware text color (light=black, dark=white)
-def get_streamlit_theme_fontcolor():
-    theme = st.get_option("theme.base")
-    if theme is None:
-        return "black"
-    return "white" if theme.lower() == "dark" else "black"
 
 def display_colored_table_html(df, color_map, pretty_map, title=None):
     if isinstance(df, pd.Series):
@@ -192,7 +244,7 @@ def build_texts_and_colors(colors, area_label, values):
     for c, v in zip(colors, values):
         if pd.isna(v):
             texts.append("No Data")
-            fonts.append("black")
+            fonts.append(get_streamlit_theme_fontcolor())
         else:
             val_str = f"{v:.3f}"
             texts.append(f"{area_label}<br>{val_str}" if area_label else f"{val_str}")
@@ -212,7 +264,6 @@ def plot_single_chart(title, data_values, area_label=None):
     nodata_y = [NO_DATA_HEIGHT if pd.isna(v) else 0 for v in vals]
 
     texts, fonts = build_texts_and_colors(color_list, area_label, vals)
-
     customdata = build_customdata(area_label, vals)
 
     fig = go.Figure()
@@ -231,7 +282,7 @@ def plot_single_chart(title, data_values, area_label=None):
         showlegend=False
     ))
 
-    # No data overlay — UPDATED FONT COLOR
+    # No data overlay — with dynamic theme font color
     fig.add_trace(go.Bar(
         x=[pretty[m] for m in metrics],
         y=nodata_y,
@@ -252,7 +303,8 @@ def plot_single_chart(title, data_values, area_label=None):
         legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
     )
 
-    st.plotly_chart(fig, width="stretch")
+    st.plotly_chart(fig, use_container_width=True)
+
 
 def plot_comparison(data1, data2, label1, label2):
     vals1 = np.array([np.nan if pd.isna(v) else float(v) for v in data1.values])
@@ -290,7 +342,7 @@ def plot_comparison(data1, data2, label1, label2):
         showlegend=False
     ))
 
-    # Dataset 1 — no data (UPDATED FONT)
+    # Dataset 1 — no data overlay
     fig.add_trace(go.Bar(
         x=metric_names,
         y=nodata1_y,
@@ -321,7 +373,7 @@ def plot_comparison(data1, data2, label1, label2):
         showlegend=False
     ))
 
-    # Dataset 2 — no data (UPDATED FONT)
+    # Dataset 2 — no data
     fig.add_trace(go.Bar(
         x=metric_names,
         y=nodata2_y,
@@ -344,7 +396,7 @@ def plot_comparison(data1, data2, label1, label2):
     ))
 
     compare_table = pd.DataFrame({
-        "Metric": [pretty[m] for m in metrics],
+        "Metric": metric_names,
         label1: data1.values,
         label2: data2.values
     }).set_index("Metric").T
@@ -360,7 +412,7 @@ def plot_comparison(data1, data2, label1, label2):
         legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
     )
 
-    st.plotly_chart(fig, width="stretch")
+    st.plotly_chart(fig, use_container_width=True)
     st.caption("_Note: darker bars represent the first dataset; lighter bars represent the second dataset._")
 
 # ------------------------------
