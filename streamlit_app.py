@@ -193,6 +193,39 @@ def build_texts_and_colors(colors, area_label, values):
             fonts.append(get_contrast_color(c))
     return texts, fonts
 
+# ---------- NEW helper to read fig background and choose contrast ----------
+def get_contrast_with_background(fig):
+    """
+    Return a color ('black' or 'white') that contrasts with the figure's
+    plot_bgcolor (preferred) or paper_bgcolor. If neither is set, default to black.
+    """
+    bg = None
+    # try plot_bgcolor then paper_bgcolor; if either is None, default to white
+    try:
+        bg = fig.layout.plot_bgcolor
+    except Exception:
+        bg = None
+    if not bg:
+        try:
+            bg = fig.layout.paper_bgcolor
+        except Exception:
+            bg = None
+    if not bg:
+        bg = "#FFFFFF"
+    # plot_bgcolor/paper_bgcolor might be an rgba or color name; handle simple hex
+    # if it's not hex, try to coerce common forms — otherwise fall back to white
+    if isinstance(bg, str) and bg.startswith("rgba"):
+        # extract rgb values and convert to hex roughly
+        try:
+            nums = bg[5:-1].split(",")
+            r, g, b = [int(float(x.strip())) for x in nums[:3]]
+            bg_hex = f"#{r:02x}{g:02x}{b:02x}"
+        except Exception:
+            bg_hex = "#FFFFFF"
+    else:
+        bg_hex = bg if isinstance(bg, str) else "#FFFFFF"
+    return get_contrast_color(bg_hex)
+
 # ------------------------------
 # Graph Functions
 # ------------------------------
@@ -226,14 +259,18 @@ def plot_single_chart(title, data_values, area_label=None):
         showlegend=False
     ))
 
-    # No data overlay
+    # determine contrasting color vs current theme background
+    bg_contrast = get_contrast_with_background(fig)
+
+    # No data overlay (use contrast color for text so it shows in dark mode)
     fig.add_trace(go.Bar(
         x=[pretty[m] for m in metrics],
         y=nodata_y,
         marker=dict(color="white", pattern=NO_DATA_PATTERN),
         text=[f"{area_label}<br>No Data" if pd.isna(v) else "" for v in vals],
+        texttemplate="%{text}",
         textposition="outside",
-        textfont=dict(size=10, color="black"),
+        textfont=dict(size=10, color=bg_contrast),
         customdata=customdata,
         hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
         name="No Data"
@@ -286,21 +323,6 @@ def plot_comparison(data1, data2, label1, label2):
         showlegend=False
     ))
 
-    # Dataset 1 — no data
-    fig.add_trace(go.Bar(
-        x=metric_names,
-        y=nodata1_y,
-        marker=dict(color="white", pattern=NO_DATA_PATTERN),
-        offsetgroup=0,
-        width=0.35,
-        text=[f"{label1}<br>No Data" if pd.isna(v) else "" for v in vals1],
-        textposition="outside",
-        textfont=dict(size=10, color="black"),
-        customdata=wingardium_leviOsa,
-        hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
-        showlegend=False
-    ))
-
     # Dataset 2 — real data
     fig.add_trace(go.Bar(
         x=metric_names,
@@ -317,7 +339,26 @@ def plot_comparison(data1, data2, label1, label2):
         showlegend=False
     ))
 
-    # Dataset 2 — no data
+    # determine contrast color after real bars are added
+    bg_contrast = get_contrast_with_background(fig)
+
+    # Dataset 1 — no data (with location + No Data labels)
+    fig.add_trace(go.Bar(
+        x=metric_names,
+        y=nodata1_y,
+        marker=dict(color="white", pattern=NO_DATA_PATTERN),
+        offsetgroup=0,
+        width=0.35,
+        text=[f"{label1}<br>No Data" if pd.isna(v) else "" for v in vals1],
+        texttemplate="%{text}",
+        textposition="outside",
+        textfont=dict(size=10, color=bg_contrast),
+        customdata=wingardium_leviOsa,
+        hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
+        showlegend=False
+    ))
+
+    # Dataset 2 — no data (with location + No Data labels)
     fig.add_trace(go.Bar(
         x=metric_names,
         y=nodata2_y,
@@ -325,8 +366,9 @@ def plot_comparison(data1, data2, label1, label2):
         offsetgroup=1,
         width=0.35,
         text=[f"{label2}<br>No Data" if pd.isna(v) else "" for v in vals2],
+        texttemplate="%{text}",
         textposition="outside",
-        textfont=dict(size=10, color="black"),
+        textfont=dict(size=10, color=bg_contrast),
         customdata=wingardium_leviosAH,
         hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
         showlegend=False
