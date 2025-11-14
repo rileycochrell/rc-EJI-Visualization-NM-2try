@@ -23,7 +23,9 @@ st.markdown(
 <style>
 /* Target the logo spacer div and inject text using the ::before pseudo-element */
 div[data-testid="stLogoSpacer"]::before {
-    content: "🌎 Environmental Justice in New Mexico";
+    content: "🌎 Environmental 
+    Justice in 
+    New Mexico";
     font-size: 20px; /* Adjust font size as needed */
     font-weight: bold;
     color: inherit; /* Use the default sidebar text color */
