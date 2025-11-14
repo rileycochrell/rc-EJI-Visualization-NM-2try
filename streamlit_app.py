@@ -185,10 +185,10 @@ def plot_comparison(data1, data2, label1, label2):
     texts2, fonts2 = build_texts_and_colors(colors2, label2, vals2)
     wingardium_leviOsa = [
         "No Data" if pd.isna(v) else f"{v:.2f}"
-        for v in vals1
+        for v in vals1 ]
     wingardium_leviosAH = [
         "No Data" if pd.isna(v) else f"{v:.2f}"
-        for v in vals2
+        for v in vals2 ]
     fig = go.Figure()
     # Data1 real
     fig.add_trace(go.Bar(x=metric_names, y=has1_y, marker_color=colors1,
