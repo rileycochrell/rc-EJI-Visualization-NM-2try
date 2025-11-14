@@ -170,6 +170,9 @@ def display_colored_table_html(df, color_map, pretty_map, title=None):
 
 NO_DATA_HEIGHT = 0.5
 NO_DATA_PATTERN = dict(shape="/", fgcolor="black", bgcolor="white", size=6)
+def build_nodata_text(area_label, values):
+    return [f"{area_label}<br>No Data" if pd.isna(v) else "" for v in values]
+
 
 # Build hover text from area + value
 def build_customdata(area_label, values):
@@ -227,18 +230,24 @@ def plot_single_chart(title, data_values, area_label=None):
     ))
 
     # No data overlay
-    fig.add_trace(go.Bar(
-        x=[pretty[m] for m in metrics],
-        y=nodata_y,
-        marker=dict(color="white", pattern=NO_DATA_PATTERN),
-        text=["No Data" if pd.isna(v) else "" for v in vals],
-        texttemplate="%{text}",
-        textposition="outside",
-        textfont=dict(size=10, color="black"),
+nodata_text = build_nodata_text(area_label, vals)
+
+fig.add_trace(go.Bar(
+    x=[pretty[m] for m in metrics],
+    y=nodata_y,
+    marker=dict(color="white", pattern=NO_DATA_PATTERN),
+    text=nodata_text,
+    texttemplate="%{text}",
+    textposition="outside",
+
+    # OPTION A — auto text color based on background (uses your helper)
+    textfont=dict(size=10, color=[get_contrast_color("white")]*len(vals)),
+    
         customdata=customdata,
         hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
         name="No Data"
     ))
+
 
     fig.update_layout(
         title=title,
