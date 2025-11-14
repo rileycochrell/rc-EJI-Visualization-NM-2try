@@ -192,16 +192,16 @@ def plot_comparison(data1, data2, label1, label2):
     fig = go.Figure()
     # Data1 real
     fig.add_trace(go.Bar(x=metric_names, y=has1_y, marker_color=colors1,
-                         offsetgroup=0, width=0.35, text=texts1,
-                         texttemplate="%{text}", textposition="inside",
-                         textfont=dict(size=10, color=fonts1),
-                         customdata=wingardium_leviOsa,
-                         hovertemplate="%{x}<br>%{customdata}<extra></extra>",
-                         showlegend=False))
+        offsetgroup=0, width=0.35, text=texts1,
+        texttemplate="%{text}", textposition="inside",
+        textfont=dict(size=10, color=fonts1),
+        customdata=wingardium_leviOsa,
+        hovertemplate="%{x}<br>%{customdata}<extra></extra>",
+        showlegend=False))
     # Data1 no bar
     fig.add_trace(go.Bar(x=metric_names, y=nodata1_y,
-                         marker=dict(color="white", pattern=NO_DATA_PATTERN),
-                         offsetgroup=0, width=0.35,
+            marker=dict(color="white", pattern=NO_DATA_PATTERN),
+            offsetgroup=0, width=0.35,
                          customdata=wingardium_leviOsa,
                          hovertemplate="%{x}<br>%{customdata}<extra></extra>",
                          showlegend=False))
