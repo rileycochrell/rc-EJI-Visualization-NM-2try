@@ -15,18 +15,8 @@ st.set_page_config(
 # ------------------------------
 # Hide Streamlit's Auto Navigation
 # ------------------------------
-st.markdown("""
-    <style>
-        /* Hide built-in 'pages/' navigation entirely */
-        div[data-testid="stSidebarNav"] {display: none;}
-        section[data-testid="stSidebar"] > div:first-child {
-            padding-top: 0px !important;
-            margin-top: 0px !important; }
-        section[data-testid="stSidebar"] div[role="list"] {
-            margin-top: 0px !important;
-            padding-top: 0px !important; }
-    </style>
-""", unsafe_allow_html=True)
+st.markdown('<style>div[data-testid="stSidebarNav"] {display: none;}</style>', unsafe_allow_html=True)
+st.sidebar.header("🌎 Environmental Justice in New Mexico")
 
 # ------------------------------
 # Custom Sidebar
