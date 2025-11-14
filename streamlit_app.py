@@ -30,7 +30,7 @@ div[data-testid="stLogoSpacer"]::before {
     display: flex;
     align-items: center;
     padding-left: 10px; /* Add some padding for alignment */
-    padding-top: 60px;
+    padding-top: 50px;
     height: 100%;
     /* Ensure no logo image is displayed if it was implicitly added */
     background-image: none !important;
