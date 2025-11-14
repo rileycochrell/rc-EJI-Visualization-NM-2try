@@ -21,38 +21,36 @@ st.markdown('<style>div[data-testid="stSidebarNav"] {display: none;}</style>', u
 st.markdown(
     """
 <style>
-/* Target the logo spacer div and inject text using the ::before pseudo-element */
-div[data-testid="stLogoSpacer"]::before {
-    /* Use \A for a newline character in CSS content */
-    content: "TEAM 23:" "\\A" "🌎 Environmental Justice in New Mexico";
-    
-    /* Display settings to center and respect newlines */
-    white-space: pre-wrap; /* Allows the \A newline to work and respects spacing */
-    text-align: center; 
-    display: block; /* Ensures the div takes up necessary space */
-    width: 100%;
-    
-    /* Font styling */
-    font-size: 16px; /* Base size */
-    font-weight: bold;
-    color: inherit; /* Use the default sidebar text color */
-
-    /* Padding for positioning */
-    padding-top: 10px;
+/* Target the logo spacer div container */
+div[data-testid="stLogoSpacer"] {
+    display: flex;
+    flex-direction: column; /* Stack the before and after elements vertically */
+    justify-content: center; /* Center vertically */
+    align-items: center; /* Center horizontally */
+    height: 100%;
+    padding-top: 10px; /* Add some padding to move it down slightly */
 }
 
-/* Optional: Make the first line bigger/bolder than the second line */
-/* This requires a slightly more complex approach usually done with JS or multiple elements */
-/* The above code will make both lines the same size and weight */
+/* ::before for the top line (TEAM 23:) */
+div[data-testid="stLogoSpacer"]::before {
+    content: "TEAM 23:";
+    font-size: 20px; /* Larger font size */
+    font-weight: bold;
+    white-space: nowrap;
+    margin-bottom: 5px; /* Space between lines */
+}
 
+/* ::after for the bottom line (🌎 Environmental Justice in New Mexico) */
+div[data-testid="stLogoSpacer"]::after {
+    content: "🌎 Environmental Justice in New Mexico";
+    font-size: 16px; /* Smaller font size */
+    white-space: nowrap;
+}
 
 </style>
 """,
     unsafe_allow_html=True,
 )
-
-# 3. Ensure no logo is set via st.logo()
-# st.logo(icon_image="🌎", image=None) # Keep this commented out or removed
 
 # ------------------------------
 # Custom Sidebar
