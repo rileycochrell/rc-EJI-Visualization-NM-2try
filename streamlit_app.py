@@ -44,7 +44,6 @@ div[data-testid="stLogoSpacer"]::before {
 div[data-testid="stLogoSpacer"]::after {
     content: "🌎 Environmental Justice in New Mexico";
     font-size: 16px; /* Smaller font size */
-    white-space: nowrap;
 }
 
 </style>
