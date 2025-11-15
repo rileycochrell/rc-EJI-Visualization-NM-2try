@@ -4,7 +4,7 @@
 # 🌎 Environmental Justice Index Visualization (New Mexico)
 
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://rc-eji-visualization-nm-vhlnxpvuqsbw2fgo3qedvu.streamlit.app/)
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://rc-eji-visualization-nm-2try-dkymi6wuyrez96rtc6amzb.streamlit.app/)
 
 
 ## Abstract
