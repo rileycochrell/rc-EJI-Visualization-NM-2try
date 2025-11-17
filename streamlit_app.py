@@ -270,7 +270,7 @@ def plot_comparison(data1, data2, label1, label2):
                          textfont=dict(size=10, color=fonts1),
                          customdata=wingardium_leviOsa, hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
                          showlegend=False))
-                         name=label1))
+                         name=label1)
     fig.add_trace(go.Bar(x=metric_names, y=nodata1_y, marker=dict(color="white", pattern=NO_DATA_PATTERN),
                          offsetgroup=0, width=0.35,
                          text=[f"{label1}<br>No Data" if pd.isna(v) else "" for v in vals1],
