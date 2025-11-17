@@ -64,28 +64,25 @@ def load_data():
 
     state_url = "https://github.com/rileycochrell/rc-EJI-Visualization-NM-2try/raw/refs/heads/main/data/2024/clean/2024EJI_StateAverages_RPL.csv"
     county_url = "https://github.com/rileycochrell/rc-EJI-Visualization-NM-2try/raw/refs/heads/main/data/2024/clean/2024EJI_NewMexico_CountyMeans.csv"
-    state_df = pd.read_csv(state_url)
-    county_df = pd.read_csv(county_url)
-    return state_df, county_df
     tract_data_url = "https://github.com/rileycochrell/rc-EJI-Visualization-NM-2try/raw/refs/heads/main/data/2024/raw/2024EJI_NM_TRACTS.csv"
     geojson_url = "https://github.com/rileycochrell/rc-EJI-Visualization-NM-2try/raw/refs/heads/main/data/2024/raw/nm_tracts.geojson"
 
-    try:
-        state_df = pd.read_csv(state_url)
-        county_df = pd.read_csv(county_url)
-        tract_df = pd.read_csv(tract_data_url, dtype={'TRACT_FIPS': str})
-        with st.spinner('Loading GeoJSON boundaries...'):
-             nm_geojson = json.loads(pd.read_json(geojson_url).to_json(orient='records')[0])
+    state_df = pd.read_csv(state_url)
+    county_df = pd.read_csv(county_url)
+    tract_df = pd.read_csv(tract_data_url, dtype={'TRACT_FIPS': str})
+
+    with st.spinner("Loading GeoJSON boundaries..."):
+        geojson_raw = pd.read_json(geojson_url)
+        nm_geojson = json.loads(geojson_raw.to_json(orient="records"))[0]
+
+    return state_df, county_df, tract_df, nm_geojson
 
 try:
-    state_df, county_df = load_data()
+    state_df, county_df, tract_df, nm_geojson = load_data()
 except Exception as e:
     st.error(f"Error loading data: {e}")
     st.stop()
-        return state_df, county_df, tract_df, nm_geojson
-except Exception as e:
-        st.error(f"Error loading data. {e}")
-        st.stop()
+
 
 rename_map = {
     "Mean_EJI": "RPL_EJI",
