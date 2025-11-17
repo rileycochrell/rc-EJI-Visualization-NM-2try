@@ -83,7 +83,7 @@ except Exception as e:
     st.error(f"Error loading data: {e}")
     st.stop()
         return state_df, county_df, tract_df, nm_geojson
-    except Exception as e:
+except Exception as e:
         st.error(f"Error loading data. {e}")
         st.stop()
 
