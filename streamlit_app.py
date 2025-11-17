@@ -282,7 +282,7 @@ def plot_comparison(data1, data2, label1, label2):
                          text=texts2, texttemplate="%{text}", textposition="inside",
                          textfont=dict(size=10, color=fonts2),
                          customdata=wingardium_leviosAH, hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
-                         showlegend=False))
+                         showlegend=False,
                          name=label2))
     fig.add_trace(go.Bar(x=metric_names, y=nodata2_y, marker=dict(color="white", pattern=NO_DATA_PATTERN),
                          offsetgroup=1, width=0.35,
