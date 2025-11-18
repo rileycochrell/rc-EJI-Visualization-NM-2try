@@ -109,7 +109,6 @@ county_df.rename(columns=rename_map, inplace=True)
 metrics = ["RPL_EJI", "RPL_EBM", "RPL_SVM", "RPL_HVM", "RPL_CBM", "RPL_EJI_CBM"]
 counties = sorted(county_df["County"].dropna().unique())
 states = sorted(state_df["State"].dropna().unique())
-parameter1 = ["New Mexico", "County"]
 parameter1 = ["Test & Map", "New Mexico", "County"]
 
 pretty = {
@@ -199,12 +198,12 @@ def build_texts_and_colors(colors, area_label, values):
         if pd.isna(v):
             texts.append("No Data")
             fonts.append(get_theme_color())  # always black
-            fonts.append(get_theme_color())
         else:
             val_str = f"{v:.3f}"
             texts.append(f"{area_label}<br>{val_str}" if area_label else f"{val_str}")
             fonts.append(get_contrast_color(c))
     return texts, fonts
+    
 def plot_single_chart(title, data_values, area_label=None):
     vals = np.array([np.nan if pd.isna(v) else float(v) for v in data_values.values])
     color_list = [dataset1_rainbows[m] for m in metrics]
@@ -243,7 +242,6 @@ def plot_single_chart(title, data_values, area_label=None):
         barmode="overlay",
         legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
     )
-    st.plotly_chart(fig, width="stretch")
     st.plotly_chart(fig, use_container_width=True)
 
 def plot_comparison(data1, data2, label1, label2):
@@ -302,7 +300,6 @@ def plot_comparison(data1, data2, label1, label2):
         xaxis_title="Environmental Justice Index Metric",
         legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
     )
-    st.plotly_chart(fig, width="stretch")
     st.caption("_Note: darker bars represent the first dataset; lighter bars represent the second dataset._")
     st.plotly_chart(fig, use_container_width=True)
     st.caption(f"_Note: {label1} is represented by the darker colors; {label2} by the lighter colors._")
@@ -380,8 +377,6 @@ st.write("Use the dropdowns below to explore data for **New Mexico**, specific *
 st.info("🔴 Rows highlighted in red represent areas with **Very High Concern/Burden (EJI ≥ 0.76)**.")
 
 selected_parameter = st.selectbox("View EJI data for:", parameter1)
-
-if selected_parameter == "County":
 
 if selected_parameter == "Test & Map":
     st.header("🔬 Test: Low-Income vs. Other Tracts")
