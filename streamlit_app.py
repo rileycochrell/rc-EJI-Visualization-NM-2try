@@ -64,7 +64,7 @@ with st.sidebar:
 @st.cache_data
 def load_data():
     """Loads state, county, tract data, and GeoJSON for analysis."""
-    state_url = "https://github.com/nhenry5/rc-EJI-Visualization-NM-2try/raw/refs/heads/main/data/2024/clean/2024EJI_StateAverages_RPL.csv"
+    state_url = "https://github.com/nhenry5/rc-EJI-Visualization-NM-2try/blob/main/data/2024/clean/2024EJI_StateAverages_RPL.csv"
     county_url = "https://github.com/nhenry5/rc-EJI-Visualization-NM-2try/blob/main/data/2024/clean/2024EJI_NewMexico_CountyMeans.csv"
     tract_data_url = "https://github.com/nhenry5/rc-EJI-Visualization-NM-2try/blob/main/data/2024/raw/2024EJI_NM_TRACTS.csv"
     geojson_url = "https://github.com/nhenry5/rc-EJI-Visualization-NM-2try/blob/main/data/2024/raw/nm_tracts.geojson"
