@@ -30,6 +30,7 @@ div[data-testid="stLogoSpacer"] {
     height: 100%;
     padding-top: 40px;
 }
+
 div[data-testid="stLogoSpacer"]::before {
     content: "TEAM 23:";
     font-size: 30px;
@@ -37,6 +38,7 @@ div[data-testid="stLogoSpacer"]::before {
     white-space: nowrap;
     margin-bottom: 5px;
 }
+
 div[data-testid="stLogoSpacer"]::after {
     content: "🌎 Environmental Justice in New Mexico";
     text-align: center;
@@ -64,26 +66,23 @@ with st.sidebar:
 @st.cache_data
 def load_data():
     """Loads state, county, tract data, and GeoJSON for analysis."""
-    state_url = "https://github.com/nhenry5/rc-EJI-Visualization-NM-2try/blob/main/data/2024/clean/2024EJI_StateAverages_RPL.csv"
-    county_url = "https://github.com/nhenry5/rc-EJI-Visualization-NM-2try/blob/main/data/2024/clean/2024EJI_NewMexico_CountyMeans.csv"
-    tract_data_url = "https://github.com/nhenry5/rc-EJI-Visualization-NM-2try/blob/main/data/2024/raw/2024EJI_NM_TRACTS.csv"
-    geojson_url = "https://github.com/nhenry5/rc-EJI-Visualization-NM-2try/blob/main/data/2024/raw/nm_tracts.geojson"
 
-    state_df = pd.read_csv(state_url)
-    county_df = pd.read_csv(county_url)
-    tract_df = pd.read_csv(tract_data_url, dtype={'TRACT_FIPS': str})
+    state_url = "https://github.com/rileycochrell/rc-EJI-Visualization-NM-2try/raw/refs/heads/main/data/2024/clean/2024EJI_StateAverages_RPL.csv"
+    county_url = "https://github.com/rileycochrell/rc-EJI-Visualization-NM-2try/raw/refs/heads/main/data/2024/clean/2024EJI_NewMexico_CountyMeans.csv"
+    tract_data_url = "https://github.com/rileycochrell/rc-EJI-Visualization-NM-2try/raw/refs/heads/main/data/2024/raw/2024EJI_NM_TRACTS.csv"
+    geojson_url = "https://github.com/rileycochrell/rc-EJI-Visualization-NM-2try/raw/refs/heads/main/data/2024/raw/nm_tracts.geojson"
 
-    with st.spinner("Loading GeoJSON boundaries..."):
-        geojson_raw = pd.read_json(geojson_url)
-        nm_geojson = json.loads(geojson_raw.to_json(orient="records"))[0]
+    try:
+        state_df = pd.read_csv(state_url)
+        county_df = pd.read_csv(county_url)
+        tract_df = pd.read_csv(tract_data_url, dtype={'TRACT_FIPS': str})
+        with st.spinner('Loading GeoJSON boundaries...'):
+             nm_geojson = json.loads(pd.read_json(geojson_url).to_json(orient='records')[0])
 
-    return state_df, county_df, tract_df, nm_geojson
-
-try:
-    state_df, county_df, tract_df, nm_geojson = load_data()
-except Exception as e:
-    st.error(f"Error loading data: {e}")
-    st.stop()
+        return state_df, county_df, tract_df, nm_geojson
+    except Exception as e:
+        st.error(f"Error loading data. {e}")
+        st.stop()
 
 rename_map = {
     "Mean_EJI": "RPL_EJI",
@@ -110,8 +109,6 @@ county_df.rename(columns=rename_map, inplace=True)
 metrics = ["RPL_EJI", "RPL_EBM", "RPL_SVM", "RPL_HVM", "RPL_CBM", "RPL_EJI_CBM"]
 counties = sorted(county_df["County"].dropna().unique())
 states = sorted(state_df["State"].dropna().unique())
-
-# FIX: 'parameter1' was defined twice in your code. I kept the one that includes 'Test & Map'.
 parameter1 = ["Test & Map", "New Mexico", "County"]
 
 pretty = {
@@ -122,6 +119,7 @@ pretty = {
     "RPL_CBM": "Climate Burden",
     "RPL_EJI_CBM": "EJI + Climate Burden"
 }
+
 dataset1_rainbows = {
     "RPL_EJI": "#911eb4",
     "RPL_EBM": "#c55c29",
@@ -130,6 +128,7 @@ dataset1_rainbows = {
     "RPL_CBM": "#469990",
     "RPL_EJI_CBM": "#801650"
 }
+
 dataset2_rainbows = {
     "RPL_EJI": "#b88be1",
     "RPL_EBM": "#D2B48C",
@@ -153,15 +152,13 @@ def get_contrast_color(hex_color):
 def get_theme_color():
     return "black"
 
-# ------------------------------
-# Table Display
-# ------------------------------
 def display_colored_table_html(df, color_map, pretty_map, title=None):
     if isinstance(df, pd.Series):
         df = df.to_frame().T
     df_display = df.rename(columns=pretty_map)
     if title:
         st.markdown(f"### {title}")
+
     header_html = "<tr>"
     for col in df_display.columns:
         orig = [k for k,v in pretty_map.items() if v == col]
@@ -169,6 +166,7 @@ def display_colored_table_html(df, color_map, pretty_map, title=None):
         text_color = get_contrast_color(color)
         header_html += f'<th style="background-color:{color};color:{text_color};padding:6px;text-align:center;">{col}</th>'
     header_html += "</tr>"
+
     body_html = ""
     for _, row in df_display.iterrows():
         highlight = any([(isinstance(v, (int,float)) and v >= 0.76) or (isinstance(v, str) and "very high" in v.lower()) for v in row])
@@ -178,12 +176,10 @@ def display_colored_table_html(df, color_map, pretty_map, title=None):
             cell_text = "No Data" if pd.isna(val) else (f"{val:.3f}" if isinstance(val, float) else val)
             body_html += f"<td style='text-align:center;padding:4px;border:1px solid #ccc'>{cell_text}</td>"
         body_html += "</tr>"
+
     table_html = f"<table style='border-collapse:collapse;width:100%;border:1px solid black;'>{header_html}{body_html}</table>"
     st.markdown(table_html, unsafe_allow_html=True)
 
-# ------------------------------
-# Graph Functions
-# ------------------------------
 NO_DATA_HEIGHT = 0.5
 NO_DATA_PATTERN = dict(shape="/", fgcolor="black", bgcolor="white", size=6)
 
@@ -201,8 +197,7 @@ def build_texts_and_colors(colors, area_label, values):
     for c, v in zip(colors, values):
         if pd.isna(v):
             texts.append("No Data")
-            # FIX: You had 'fonts.append' twice here, which would misalign the lists. Removed one.
-            fonts.append(get_theme_color()) 
+            fonts.append(get_theme_color())
         else:
             val_str = f"{v:.3f}"
             texts.append(f"{area_label}<br>{val_str}" if area_label else f"{val_str}")
@@ -216,7 +211,9 @@ def plot_single_chart(title, data_values, area_label=None):
     nodata_y = [NO_DATA_HEIGHT if pd.isna(v) else 0 for v in vals]
     texts, fonts = build_texts_and_colors(color_list, area_label, vals)
     customdata = build_customdata(area_label, vals)
+
     fig = go.Figure()
+
     fig.add_trace(go.Bar(
         x=[pretty[m] for m in metrics],
         y=has_y,
@@ -229,6 +226,7 @@ def plot_single_chart(title, data_values, area_label=None):
         hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
         showlegend=False
     ))
+
     fig.add_trace(go.Bar(
         x=[pretty[m] for m in metrics],
         y=nodata_y,
@@ -240,6 +238,7 @@ def plot_single_chart(title, data_values, area_label=None):
         hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
         name="No Data"
     ))
+
     fig.update_layout(
         title=title,
         yaxis=dict(title="Percentile Rank Value", range=[0, 1], dtick=0.25),
@@ -247,7 +246,6 @@ def plot_single_chart(title, data_values, area_label=None):
         barmode="overlay",
         legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
     )
-    # FIX: Removed 'st.plotly_chart(fig, width="stretch")'. 'width="stretch"' is not a valid parameter for Streamlit.
     st.plotly_chart(fig, use_container_width=True)
 
 def plot_comparison(data1, data2, label1, label2):
@@ -264,13 +262,13 @@ def plot_comparison(data1, data2, label1, label2):
     texts2, fonts2 = build_texts_and_colors(colors2, label2, vals2)
     wingardium_leviOsa = build_customdata(label1, vals1)
     wingardium_leviosAH = build_customdata(label2, vals2)
+
     fig = go.Figure()
     # Dataset 1
     fig.add_trace(go.Bar(x=metric_names, y=has1_y, marker_color=colors1, offsetgroup=0, width=0.35,
                          text=texts1, texttemplate="%{text}", textposition="inside",
                          textfont=dict(size=10, color=fonts1),
                          customdata=wingardium_leviOsa, hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
-                         showlegend=False,
                          name=label1))
     fig.add_trace(go.Bar(x=metric_names, y=nodata1_y, marker=dict(color="white", pattern=NO_DATA_PATTERN),
                          offsetgroup=0, width=0.35,
@@ -283,7 +281,6 @@ def plot_comparison(data1, data2, label1, label2):
                          text=texts2, texttemplate="%{text}", textposition="inside",
                          textfont=dict(size=10, color=fonts2),
                          customdata=wingardium_leviosAH, hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
-                         showlegend=False,
                          name=label2))
     fig.add_trace(go.Bar(x=metric_names, y=nodata2_y, marker=dict(color="white", pattern=NO_DATA_PATTERN),
                          offsetgroup=1, width=0.35,
@@ -292,13 +289,16 @@ def plot_comparison(data1, data2, label1, label2):
                          customdata=wingardium_leviosAH, hovertemplate="%{x}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>",
                          showlegend=False))
     fig.add_trace(go.Bar(x=[None], y=[None], marker=dict(color="white", pattern=NO_DATA_PATTERN), name="No Data"))
+
     compare_table = pd.DataFrame({
         "Metric": [pretty[m] for m in metrics],
         label1: data1.values,
         label2: data2.values
     }).set_index("Metric").T
+
     st.subheader("⚖️ Data Comparison Table")
     display_colored_table_html(compare_table.reset_index(), dataset1_rainbows, {"index": "Metric", **pretty}, title=None)
+
     fig.update_layout(
         barmode="group",
         title=f"EJI Metric Comparison — {label1} vs {label2}",
@@ -306,20 +306,21 @@ def plot_comparison(data1, data2, label1, label2):
         xaxis_title="Environmental Justice Index Metric",
         legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center")
     )
-    # FIX: Removed invalid 'width="stretch"' line.
     st.plotly_chart(fig, use_container_width=True)
     st.caption(f"_Note: {label1} is represented by the darker colors; {label2} by the lighter colors._")
 
 # ------------------------------
-# Analysis Functions
+# STEP 3: Testing
 # ------------------------------
 def run_test(df, group_column, target_column, threshold=0.75):
     """Classifies tracts based on the Socioeconomic Vulnerability and performs T-test."""
+
     df['Is_Low_Income_Tract'] = np.where(
         df[group_column] >= threshold,
         'Low-Income (High Burden)',
         'Other Tracts (Lower Burden)'
     )
+
     low_income_ej = df[df['Is_Low_Income_Tract'] == 'Low-Income (High Burden)'][target_column].dropna()
     other_ej = df[df['Is_Low_Income_Tract'] == 'Other Tracts (Lower Burden)'][target_column].dropna()
 
@@ -329,8 +330,12 @@ def run_test(df, group_column, target_column, threshold=0.75):
     t_stat, p_value = stats.ttest_ind(low_income_ej, other_ej, equal_var=False)
     return low_income_ej.mean(), other_ej.mean(), t_stat, p_value, df
 
+# ------------------------------
+# STEP 5: Mapping
+# ------------------------------
 def plot_nm_map(df, geojson, color_column, title):
     """Creates a Choropleth map of NM Census Tracts based on EJI score."""
+
     df['TRACT_FIPS'] = df['TRACT_FIPS'].astype(str).str.zfill(11)
     fig = px.choropleth(
         df,
@@ -349,12 +354,14 @@ def plot_nm_map(df, geojson, color_column, title):
             'TRACT_FIPS': False
         }
     )
+
     fig.update_geos(
         fitbounds="locations", visible=False,
         lataxis_range=[31, 38],
         lonaxis_range=[-110, -102]
     )
     fig.update_layout(margin={"r":0,"t":50,"l":0,"b":0})
+
     st.plotly_chart(fig, use_container_width=True)
 
 
@@ -362,20 +369,16 @@ def plot_nm_map(df, geojson, color_column, title):
 # Main App Layout 
 # ------------------------------
 st.title("📊 Environmental Justice Index Visualization (New Mexico)")
-
-# FIX: You had duplicate text blocks here. I combined them into one clean block.
 st.info("""
-**Interpreting the EJI Score:** Lower EJI values (closer to 0) indicate *lower cumulative environmental and social burdens* — generally a good outcome.  
+**Interpreting the EJI Score:**
+Lower EJI values (closer to 0) indicate *lower cumulative environmental and social burdens* — generally a good outcome.
 Higher EJI values (closer to 1) indicate *higher cumulative burdens and vulnerabilities* — generally a worse outcome.
 """)
-
 st.write("Use the dropdowns below to explore data for **New Mexico**, specific **counties**, or view the final **Hypothesis Test** results.")
 st.info("🔴 Rows highlighted in red represent areas with **Very High Concern/Burden (EJI ≥ 0.76)**.")
 
 selected_parameter = st.selectbox("View EJI data for:", parameter1)
 
-# FIX: Major logic repair here. The previous code had "if County" then "if Test & Map" nested inside it illogically.
-# I have separated them into a clean if/elif/else block so the app works correctly.
 
 if selected_parameter == "Test & Map":
     st.header("🔬 Test: Low-Income vs. Other Tracts")
@@ -385,7 +388,9 @@ if selected_parameter == "Test & Map":
 
     mean_low_income, mean_other, t_stat, p_value, tract_df_classified = run_test(tract_df.copy(), 'RPL_SVM', 'RPL_EJI', 0.75)
     if mean_low_income is not None:
+
         col_mean, col_t = st.columns(2)
+
         with col_mean:
             st.metric(
                 "Mean Overall EJI (Low-Income Tracts)",
@@ -396,6 +401,7 @@ if selected_parameter == "Test & Map":
                 "Mean Overall EJI (Other Tracts)",
                 f"{mean_other:.3f}",
             )
+
         with col_t:
             st.metric("T-Statistic", f"{t_stat:.2f}", help="Measures the magnitude of difference between group means.")
             st.metric("P-Value", f"{p_value:.4f}", help="P-value < 0.05 indicates the difference is statistically significant.")
@@ -408,6 +414,7 @@ if selected_parameter == "Test & Map":
 
         st.divider()
         st.markdown("### 🗺️ Choropleth Map: Overall EJI Burden by Census Tract")
+
         plot_nm_map(
             tract_df_classified,
             nm_geojson,
@@ -416,6 +423,8 @@ if selected_parameter == "Test & Map":
         )
     else:
         st.error("Cannot run hypothesis test. Check your Census Tract data file for 'RPL_SVM' and 'RPL_EJI' columns and ensure no NaN values prevented the test.")
+
+
 
 elif selected_parameter == "County":
     selected_county = st.selectbox("Select a New Mexico County:", counties)
@@ -427,6 +436,7 @@ elif selected_parameter == "County":
         display_colored_table_html(subset, dataset1_rainbows, pretty)
         county_values = subset[metrics].iloc[0]
         plot_single_chart(f"EJI Metrics — {selected_county}", county_values, area_label=selected_county)
+
         if st.checkbox("Compare with another dataset"):
             compare_type = st.radio("Compare with:", ["State", "County"])
             if compare_type == "State":
@@ -441,8 +451,7 @@ elif selected_parameter == "County":
                 if not comp_row.empty:
                     comp_values = comp_row[metrics].iloc[0]
                     plot_comparison(county_values, comp_values, selected_county, comp_county)
-
-else: # This catches "New Mexico" (or any fallback)
+else:
     nm_row = state_df[state_df["State"].str.strip().str.lower() == "new mexico"]
     if nm_row.empty:
         st.warning("No New Mexico data found.")
@@ -451,6 +460,7 @@ else: # This catches "New Mexico" (or any fallback)
         display_colored_table_html(nm_row, dataset1_rainbows, pretty)
         nm_values = nm_row[metrics].iloc[0]
         plot_single_chart("EJI Metrics — New Mexico", nm_values, area_label="New Mexico")
+
         if st.checkbox("Compare with another dataset"):
             compare_type = st.radio("Compare with:", ["State", "County"])
             if compare_type == "State":
